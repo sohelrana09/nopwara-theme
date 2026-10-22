@@ -1,0 +1,73 @@
+@model ProductSpecificationModel
+
+@using Nop.Core.Domain.Catalog;
+
+@if (Model.Groups.SelectMany(g => g.Attributes).ToList().Count > 0)
+{
+    <div class="product-specs-box">
+        @*Nopwara: the tab already names this section, so the heading is visually hidden*@
+        <h2 class="title sr-only">
+            @T("Products.Specs")
+        </h2>
+        <div class="table-wrapper overflow-x-auto rounded-lg border border-slate-200">
+            <table class="data-table w-full text-left text-sm">
+                <thead>
+                    <tr class="hidden-row sr-only">
+                        <th width="25%"><span>@T("Products.Specs.AttributeName")</span></th>
+                        <th><span>@T("Products.Specs.AttributeValue")</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var group in Model.Groups)
+                    {
+                        @if (group.Attributes.Count > 0)
+                        {
+                            @if (group.Id > 0)
+                            {
+                                <tr class="spec-header bg-slate-100">
+                                    <td class="spec-group-name px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700" colspan="2">
+                                        @group.Name
+                                    </td>
+                                </tr>
+                            }
+
+                            @for (int i = 0; i < group.Attributes.Count; i++)
+                            {
+                                var attr = group.Attributes[i];
+
+                                <tr class="@(i % 2 == 0 ? "odd" : "even bg-slate-50") border-t border-slate-100">
+                                    <td class="spec-name w-1/3 px-4 py-3 font-medium text-slate-700">
+                                        @attr.Name
+                                    </td>
+                                    <td class="spec-value px-4 py-3 text-slate-600">
+                                        @for (int j = 0; j < attr.Values.Count; j++)
+                                        {
+                                            var value = attr.Values[j];
+
+                                            @if (!string.IsNullOrEmpty(value.ColorSquaresRgb) && (value.AttributeTypeId == (int)SpecificationAttributeType.Option))
+                                            {
+                                                <div class="attribute-squares color-squares attribute-squares-padding">
+                                                    <span class="attribute-square-container" title="@Html.Raw(value.ValueRaw)">
+                                                        <span class="attribute-square" style="background-color: @(value.ColorSquaresRgb);">&nbsp;</span>
+                                                    </span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                @Html.Raw(value.ValueRaw)
+                                                if (j != attr.Values.Count - 1)
+                                                {
+                                                    <text>,&nbsp;</text>
+                                                }
+                                            }
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

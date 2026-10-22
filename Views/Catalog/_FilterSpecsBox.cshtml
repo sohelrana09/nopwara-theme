@@ -1,0 +1,77 @@
+@model SpecificationFilterModel
+
+@*
+    Nopwara: same inputs/data attributes as core ([data-option-id]) so the CatalogProducts hooks keep working.
+    Long groups collapse after @visibleCount values (selected values always stay visible).
+*@
+@{
+    const int visibleCount = 6;
+}
+<div class="product-filter product-spec-filter">
+    <h2 class="filter-title">
+        @T("Filtering.SpecificationFilter")
+    </h2>
+    <div class="filter-content">
+        @foreach (var attr in Model.Attributes)
+        {
+            var isColor = attr.Values.Any(x => !string.IsNullOrEmpty(x.ColorSquaresRgb));
+            var hidden = attr.Values.Skip(visibleCount).Count(v => !v.Selected);
+            <ul class="group product-spec-group @(isColor ? "product-spec-color" : null)" x-data="{ all: false }">
+                <li class="name">
+                    <strong>@attr.Name</strong>
+                </li>
+                @{ var index = 0; }
+                @foreach (var value in attr.Values)
+                {
+                    var collapse = index++ >= visibleCount && !value.Selected;
+                    <li class="item @(isColor ? "color-item" : null)" @(collapse ? Html.Raw("x-show=\"all\" x-cloak") : null)>
+                        <input id="attribute-option-@value.Id" type="checkbox" data-option-id="@value.Id" checked="@value.Selected" />
+                        @if (string.IsNullOrEmpty(value.ColorSquaresRgb))
+                        {
+                            <label for="attribute-option-@value.Id" class="cursor-pointer">
+                                @value.Name
+                            </label>
+                        }
+                        else
+                        {
+                            <label for="attribute-option-@value.Id" class="attribute-squares color-squares cursor-pointer">
+                                <span class="attribute-square" style="background-color: @(value.ColorSquaresRgb);"></span>
+                                @value.Name
+                            </label>
+                        }
+                    </li>
+                }
+                @if (hidden > 0)
+                {
+                    <li>
+                        <button type="button" class="filter-more" x-on:click="all = !all" :aria-expanded="all">
+                            <span x-show="!all">+ @hidden</span>
+                            <span x-show="all" x-cloak>&minus;</span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+<script asp-location="Footer">
+    $(function() {
+        var $optionEls = $('[data-option-id]');
+        $optionEls.on('change', function () {
+            CatalogProducts.getProducts();
+        });
+
+        $(CatalogProducts).on('before', function (e) {
+            var selectedOptions = $.map($optionEls, function (el) {
+                var $optionEl = $(el);
+                if ($optionEl.is(':checked')) return $optionEl.data('option-id');
+                return null;
+            });
+
+            if (selectedOptions && selectedOptions.length > 0) {
+                e.payload.urlBuilder
+                    .addParameter('specs', selectedOptions.join(','));
+            }
+        });
+    });
+</script>

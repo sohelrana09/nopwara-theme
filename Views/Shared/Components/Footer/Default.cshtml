@@ -1,0 +1,50 @@
+@model FooterModel
+
+@using Nop.Core
+@using Nop.Core.Domain.Tax
+
+@inject IWorkContext workContext
+
+@*Nopwara footer. Footer menus collapse into Alpine accordions below lg (see FooterMenu).*@
+<footer class="footer mt-16 bg-slate-900 text-sm text-slate-400 [&_a]:text-slate-300 [&_a:hover]:text-white">
+    <section class="footer-upper site-container grid gap-10 py-12 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:py-16">
+        @await Component.InvokeAsync(typeof(FooterMenuViewComponent))
+
+        <div class="footer-block follow-us space-y-8">
+            <div class="social space-y-3">
+                <h2 class="title text-sm font-semibold uppercase tracking-wide text-white">
+                    @T("Footer.FollowUs")
+                </h2>
+                @await Component.InvokeAsync(typeof(SocialButtonsViewComponent))
+            </div>
+            @await Component.InvokeAsync(typeof(NewsLetterBoxViewComponent))
+        </div>
+    </section>
+
+    <section class="footer-lower border-t border-slate-800">
+        <div class="site-container flex flex-col gap-3 py-6 text-xs sm:flex-row sm:items-center sm:justify-between">
+            <div class="footer-info space-y-1">
+                <p class="footer-disclaimer">@T("Content.CopyrightNotice", DateTime.Now.Year, Model.StoreName)</p>
+                @if (Model.DisplayTaxShippingInfoFooter)
+                {
+                    var inclTax = await workContext.GetTaxDisplayTypeAsync() == TaxDisplayType.IncludingTax;
+                    <p class="footer-tax-shipping">
+                        @T(inclTax ? "Footer.TaxShipping.InclTax" : "Footer.TaxShipping.ExclTax", await NopUrl.RouteTopicUrlAsync("shippinginfo"))
+                    </p>
+                }
+            </div>
+            <div class="flex items-center gap-4 [&_select]:rounded [&_select]:border [&_select]:border-slate-700 [&_select]:bg-slate-800 [&_select]:px-2 [&_select]:py-1 [&_select]:text-slate-200">
+                @if (!Model.HidePoweredByNopCommerce)
+                {
+                    <div class="footer-powered-by">
+                        @*Would you like to remove the "Powered by nopCommerce" link in the bottom of the footer?
+                            Please find more info at https://www.nopcommerce.com/nopcommerce-copyright-removal-key*@
+                        Powered by <a href="@(OfficialSite.Main)" target="_blank" @(Model.IsHomePage ? string.Empty : "rel=nofollow")>nopCommerce</a>
+                    </div>
+                }
+                @await Component.InvokeAsync(typeof(StoreThemeSelectorViewComponent))
+            </div>
+        </div>
+    </section>
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.Footer, additionalData = Model })
+</footer>

@@ -1,0 +1,1236 @@
+/* Tailwind source for the Nopwara theme. Build output: ../Content/css/styles.css */
+@import "tailwindcss" source(none);
+
+/* Only scan files that use Tailwind classes: the theme's own views and scripts */
+@source "../Views";
+@source "../Content/js/nopwara*.js";
+/* companion plugin: Nop.Plugin.Misc.NopwaraCheckout (single-page checkout) */
+@source "../../../../../Plugins/Nop.Plugin.Misc.NopwaraCheckout/Views";
+@source "../../../../../Plugins/Nop.Plugin.Widgets.NopwaraSearch/Views";
+@source "../../../../../Plugins/Nop.Plugin.Widgets.NopwaraSearch/Content/js";
+@source "../../../../../Plugins/Nop.Plugin.Widgets.NopwaraQuickView/Views";
+@source "../../../../../Plugins/Nop.Plugin.Widgets.NopwaraQuickView/Content/js";
+@source "../../../../../Plugins/Nop.Plugin.Widgets.NopwaraBoost/Views";
+@source "../../../../../Plugins/Nop.Plugin.Misc.NopwaraQA/Views";
+@source "../../../../../Plugins/Nop.Plugin.Misc.NopwaraBundles/Views";
+@source "../../../../../Plugins/Nop.Plugin.ExternalAuth.Google/Views";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary-50: oklch(0.97 0.02 255);
+  --color-primary-100: oklch(0.93 0.04 255);
+  --color-primary-200: oklch(0.87 0.07 255);
+  --color-primary-300: oklch(0.79 0.11 255);
+  --color-primary-500: oklch(0.6 0.17 255);
+  --color-primary-600: oklch(0.52 0.18 255);
+  --color-primary-700: oklch(0.45 0.16 255);
+
+  --container-site: 80rem;
+
+  @keyframes nopwara-toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-white font-sans text-slate-800 antialiased;
+  }
+
+  a {
+    @apply text-primary-600 hover:text-primary-700;
+  }
+
+  [x-cloak] {
+    display: none !important;
+  }
+}
+
+@layer components {
+  .site-container {
+    @apply mx-auto w-full max-w-(--container-site) px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition;
+  }
+
+  /* use together with .btn: class="btn btn-primary" */
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700;
+  }
+
+  /* jQuery UI autocomplete rendered by the core search box script (appended to .search-box) */
+  .search-box .ui-autocomplete {
+    @apply absolute z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 text-sm shadow-lg;
+  }
+  .search-box .ui-menu-item,
+  .search-box .search-box-item {
+    @apply flex items-center justify-between rounded-md;
+  }
+  .search-box .ui-menu-item a,
+  .search-box .search-box-link {
+    @apply flex flex-1 items-center gap-3 px-3 py-2 text-slate-700 hover:text-slate-900;
+  }
+  .search-box .ui-state-active,
+  .search-box .ui-menu-item:hover {
+    @apply bg-slate-100;
+  }
+  .search-box .search-box-remove {
+    @apply cursor-pointer px-3 text-slate-400 hover:text-slate-700;
+  }
+
+  /* ---------- catalog: product grids/lists (core wrappers, used by many core views) ---------- */
+  .product-grid .item-grid {
+    @apply grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4;
+  }
+  .center-1 .product-grid .item-grid {
+    @apply lg:grid-cols-4;
+  }
+  .product-list .item-grid {
+    @apply grid gap-4;
+  }
+  .products-container {
+    @apply relative;
+  }
+  /* shown by public.catalogproducts.js while ajax filtering/paging */
+  .ajax-products-busy {
+    @apply absolute inset-0 z-10 hidden rounded-lg bg-white/60;
+  }
+  .ajax-products-busy::after {
+    @apply absolute left-1/2 top-24 -ml-5 size-10 animate-spin rounded-full border-4 border-primary-100 border-t-primary-600 content-[''];
+  }
+  .products-wrapper > .warning,
+  .products-wrapper > .no-result {
+    @apply rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900;
+  }
+
+  /* pager rendered by Html.Pager() */
+  .pager ul {
+    @apply mt-8 flex flex-wrap items-center justify-center gap-1 text-sm;
+  }
+  .pager li > a,
+  .pager li > span {
+    @apply inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-slate-200 px-3 text-slate-700;
+  }
+  .pager li > a:hover {
+    @apply border-slate-300 bg-slate-50 text-slate-900;
+  }
+  .pager .current-page > span {
+    @apply border-primary-600 bg-primary-600 font-semibold text-white;
+  }
+
+  /* ---------- sidebar blocks (core + plugin components rendered in .side-2) ---------- */
+  .side-2 .block {
+    @apply rounded-lg border border-slate-200 bg-white p-4 text-sm;
+  }
+  .side-2 .block > .title,
+  .side-2 .filter-title {
+    @apply mb-3 text-xs font-semibold uppercase tracking-wide text-slate-900;
+  }
+  .side-2 .listbox .list {
+    @apply space-y-0.5;
+  }
+  .side-2 .listbox .list a {
+    @apply block rounded px-2 py-1.5 text-slate-600 hover:bg-slate-50 hover:text-primary-600;
+  }
+  .side-2 .listbox .list .active > a {
+    @apply font-semibold text-primary-700;
+  }
+  .side-2 .listbox .sublist {
+    @apply ml-3 border-l border-slate-200 pl-2;
+  }
+  .side-2 .view-all {
+    @apply mt-2 px-2 text-xs font-medium;
+  }
+  .side-2 .tags ul {
+    @apply flex flex-wrap gap-1.5;
+  }
+  .side-2 .tags a {
+    @apply inline-block rounded-full border border-slate-200 px-2.5 py-0.5 text-slate-600 hover:border-primary-500 hover:text-primary-600;
+    font-size: 0.75rem !important; /* core sets an inline font-size per tag weight */
+  }
+
+  /* filters */
+  .side-2 .product-filters {
+    @apply space-y-6;
+  }
+  .side-2 .product-filter + .product-filter {
+    @apply border-t border-slate-100 pt-5;
+  }
+  .side-2 .product-spec-group,
+  .side-2 .product-manufacturer-group {
+    @apply space-y-1.5 [&+&]:mt-4;
+  }
+  .side-2 .product-spec-group .name {
+    @apply text-xs font-semibold text-slate-700;
+  }
+  .side-2 .product-filter .item {
+    @apply flex items-center gap-2 text-slate-600;
+  }
+  .side-2 .product-filter input[type="checkbox"] {
+    @apply size-4 rounded accent-primary-600;
+  }
+  .side-2 .attribute-squares {
+    @apply inline-flex items-center gap-2;
+  }
+  .side-2 .attribute-square {
+    @apply inline-block size-4 rounded-full border border-slate-300;
+  }
+  .side-2 .filter-more {
+    @apply mt-1 rounded px-1 text-xs font-semibold text-primary-700 hover:underline;
+  }
+
+  /* Nopwara dual price range (_FilterPriceBox): two native range inputs on one track; --from/--to set by Alpine */
+  .nopwara-range::before {
+    @apply absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-slate-200 content-[''];
+  }
+  .nopwara-range::after {
+    @apply absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-primary-600 content-[''];
+    left: var(--from);
+    right: calc(100% - var(--to));
+  }
+  .nopwara-range-input {
+    @apply pointer-events-none absolute inset-0 z-10 m-0 h-5 w-full appearance-none bg-transparent;
+  }
+  .nopwara-range-input::-webkit-slider-thumb {
+    @apply pointer-events-auto size-4 cursor-pointer appearance-none rounded-full border-2 border-primary-600 bg-white shadow;
+  }
+  .nopwara-range-input::-moz-range-thumb {
+    @apply pointer-events-auto size-4 cursor-pointer rounded-full border-2 border-primary-600 bg-white shadow;
+  }
+  .nopwara-range-input:focus-visible::-webkit-slider-thumb {
+    @apply ring-4 ring-primary-100;
+  }
+  .side-2 .selected-price-range {
+    @apply mb-3 flex justify-between text-sm font-medium text-slate-700;
+  }
+
+  /* jQuery UI price range slider */
+  .side-2 .ui-slider {
+    @apply relative mx-2 my-3 h-1.5 rounded-full border-0 bg-slate-200;
+  }
+  .side-2 .ui-slider .ui-slider-range {
+    @apply absolute h-full rounded-full border-0 bg-primary-600;
+  }
+  .side-2 .ui-slider .ui-slider-handle {
+    @apply absolute top-1/2 -ml-2 size-4 -translate-y-1/2 cursor-pointer rounded-full border-2 border-primary-600 bg-white shadow outline-none;
+  }
+
+  /* ---------- product details: core partials styled in place (their scripts depend on the markup) ---------- */
+  .product-details-page .product-meta .label,
+  .product-details-page .manufacturers .label {
+    @apply mr-1 font-medium text-slate-700;
+  }
+  .product-details-page .stock .value {
+    @apply font-medium text-emerald-700;
+  }
+  .product-details-page .free-shipping {
+    @apply inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700;
+  }
+  .product-details-page .discontinued-product {
+    @apply rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700;
+  }
+
+  /* attributes (_ProductAttributes.cshtml) */
+  .product-details-page .attributes dl {
+    @apply space-y-2;
+  }
+  .product-details-page .attributes dt {
+    @apply pt-2 text-sm font-semibold text-slate-800;
+  }
+  .product-details-page .attributes dt .required {
+    @apply ml-0.5 text-red-500;
+  }
+  .product-details-page .attributes select,
+  .product-details-page .attributes input[type="text"],
+  .product-details-page .attributes textarea,
+  .product-details-page .giftcard input,
+  .product-details-page .giftcard textarea,
+  .product-details-page .rental-attributes input {
+    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100;
+  }
+  .product-details-page .attributes .option-list {
+    @apply flex flex-wrap gap-2;
+  }
+  .product-details-page .attributes .option-list li {
+    @apply relative;
+  }
+  /* radio / checkbox options render as selectable pills */
+  .product-details-page .attributes .option-list input[type="radio"],
+  .product-details-page .attributes .option-list input[type="checkbox"] {
+    @apply sr-only;
+  }
+  .product-details-page .attributes .option-list label {
+    @apply inline-flex cursor-pointer items-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:border-slate-400;
+  }
+  .product-details-page .attributes .option-list input:checked + label {
+    @apply border-primary-600 bg-primary-50 text-primary-700;
+  }
+  .product-details-page .attributes .option-list input:focus-visible + label {
+    @apply ring-2 ring-primary-100;
+  }
+  /* color / image squares: the radio sits inside the label, so selection uses li.selected-value (core js) or :has */
+  .product-details-page .attributes .attribute-squares {
+    @apply flex flex-wrap gap-2;
+  }
+  .product-details-page .attributes .attribute-squares li label {
+    @apply rounded-full p-0.5;
+  }
+  .product-details-page .attributes .attribute-squares li.selected-value label,
+  .product-details-page .attributes .attribute-squares li label:has(input:checked) {
+    @apply border-primary-600 bg-white ring-2 ring-primary-100;
+  }
+  .product-details-page .attributes .attribute-square-container {
+    @apply inline-flex;
+  }
+  .product-details-page .attributes .attribute-square {
+    @apply inline-block size-8 rounded-full border border-black/10 bg-cover! bg-center!;
+  }
+  .product-details-page .attributes .image-squares li label {
+    @apply rounded-md;
+  }
+  .product-details-page .attributes .image-squares .attribute-square {
+    @apply size-11 rounded;
+  }
+  /* tooltips: only image squares get a hover preview; "not available" shows for disabled values */
+  .product-details-page .attributes .tooltip-container {
+    @apply hidden;
+  }
+  .product-details-page .attributes .image-squares li:hover .tooltip-container {
+    @apply absolute bottom-full left-1/2 z-20 mb-2 block w-40 -translate-x-1/2 rounded-lg border border-slate-200 bg-white p-2 text-center text-xs font-medium text-slate-700 shadow-lg;
+  }
+  .product-details-page .attributes .tooltip-header {
+    @apply mb-1.5;
+  }
+  .product-details-page .attributes .tooltip-body img {
+    @apply aspect-square w-full rounded object-cover;
+  }
+  .product-details-page .attributes .not-available-text {
+    @apply hidden;
+  }
+  .product-details-page .attributes .attribute-squares li.disabled .attribute-square {
+    @apply opacity-40;
+  }
+  .product-details-page .attributes .attribute-squares li.disabled label {
+    @apply cursor-not-allowed border-dashed;
+  }
+  .product-details-page .attributes .color-squares li.disabled .tooltip-container,
+  .product-details-page .attributes .attribute-squares li.disabled .not-available-text {
+    @apply block;
+  }
+  .product-details-page .attributes .color-squares li.disabled .tooltip-container {
+    @apply mt-1 text-center text-[11px] text-slate-500;
+  }
+  .product-details-page .attributes .option-list:not(.attribute-squares) .disabled label {
+    @apply cursor-not-allowed text-slate-400 line-through;
+  }
+  .product-details-page .attributes .qty-box {
+    @apply mt-2 flex items-center gap-2 text-sm;
+  }
+  .product-details-page .attributes .qty-box input {
+    @apply w-20!;
+  }
+
+  /* gift card fields: label + required star on one line, control below */
+  .product-details-page .giftcard {
+    @apply space-y-3;
+  }
+  .product-details-page .giftcard > div {
+    @apply flex flex-wrap items-baseline gap-x-1;
+  }
+  .product-details-page .giftcard label,
+  .product-details-page .rental-attributes label {
+    @apply mb-1 text-sm font-semibold text-slate-800;
+  }
+  .product-details-page .giftcard .required,
+  .product-details-page .rental-attributes .required {
+    @apply order-1 text-red-500;
+  }
+  .product-details-page .giftcard input,
+  .product-details-page .giftcard textarea {
+    @apply order-2;
+  }
+  .product-details-page .giftcard textarea {
+    @apply min-h-24;
+  }
+
+  /* rental dates */
+  .product-details-page .rental-attributes {
+    @apply grid gap-3 sm:grid-cols-2;
+  }
+  .product-details-page .rental-attributes .attribute-label {
+    @apply flex items-baseline gap-1;
+  }
+
+  /* share buttons (ShareThis injects text-align:center) */
+  .product-details-page .product-share-button .st-inline-share-buttons {
+    text-align: left !important;
+  }
+
+  /* attributes missing on "Add to cart" (nopwara.js attribute check) */
+  .product-details-page .attributes dt[data-invalid] .text-prompt {
+    @apply text-red-700;
+  }
+  .product-details-page .attributes dd[data-invalid] select,
+  .product-details-page .attributes dd[data-invalid] input[type="text"],
+  .product-details-page .attributes dd[data-invalid] textarea {
+    @apply border-red-400 ring-2 ring-red-100;
+  }
+  .product-details-page .attributes dd[data-invalid] .option-list label {
+    @apply border-red-300;
+  }
+
+  /* tier prices, estimate shipping, overview buttons, share */
+  .product-details-page .tier-prices table {
+    @apply w-full overflow-hidden rounded-md border border-slate-200 text-sm;
+  }
+  .product-details-page .tier-prices td {
+    @apply border-t border-slate-100 px-3 py-1.5;
+  }
+  .product-details-page .tier-prices .title {
+    @apply mb-2 text-sm font-semibold;
+  }
+  .product-details-page .product-estimate-shipping {
+    @apply text-sm;
+  }
+  .product-details-page .product-estimate-shipping a,
+  .product-details-page .open-estimate-shipping-popup {
+    @apply font-medium;
+  }
+  .product-details-page .overview-buttons button,
+  .product-details-page .email-a-friend-button {
+    @apply inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-900;
+  }
+
+  /* description tab content (HTML from admin editor) */
+  .nopwara-prose {
+    @apply max-w-3xl space-y-4 text-sm leading-relaxed text-slate-700;
+  }
+  .nopwara-prose :where(h1, h2, h3, h4) {
+    @apply font-semibold text-slate-900;
+  }
+  .nopwara-prose :where(ul) {
+    @apply list-disc space-y-1 pl-5;
+  }
+  .nopwara-prose :where(ol) {
+    @apply list-decimal space-y-1 pl-5;
+  }
+  .nopwara-prose :where(a) {
+    @apply underline;
+  }
+  .nopwara-prose :where(img) {
+    @apply h-auto max-w-full rounded;
+  }
+
+  /* reviews (_ProductReviews.cshtml) */
+  .product-details-page .product-reviews {
+    @apply max-w-3xl space-y-10;
+  }
+  .product-details-page .product-reviews > div > .title,
+  .product-details-page .write-review > .title {
+    @apply mb-4 text-lg font-semibold text-slate-900;
+  }
+  .product-details-page .product-review-item {
+    @apply space-y-2 border-b border-slate-100 py-5 text-sm;
+  }
+  .product-details-page .review-item-head {
+    @apply flex flex-wrap items-center justify-between gap-2;
+  }
+  .product-details-page .review-title strong {
+    @apply text-slate-900;
+  }
+  .product-details-page .review-info {
+    @apply flex flex-wrap gap-x-2 text-xs text-slate-500;
+  }
+  .product-details-page .review-info label {
+    @apply mr-1;
+  }
+  .product-details-page .product-review-helpfulness {
+    @apply flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-500;
+  }
+  .product-details-page .product-review-helpfulness .vote-options {
+    @apply inline-flex gap-1.5;
+  }
+  .product-details-page .product-review-helpfulness .vote {
+    @apply inline-flex cursor-pointer select-none items-center rounded-full border border-slate-300 bg-white px-3 py-1 font-medium text-slate-700 transition hover:border-primary-500 hover:text-primary-700;
+  }
+  .product-details-page .product-review-helpfulness .vote-stats {
+    @apply tabular-nums text-slate-400;
+  }
+  /* vote result (filled by core ajax, faded in/out by jQuery); overrides the generic .page .result box */
+  .product-details-page .product-review-helpfulness .result {
+    @apply m-0 rounded-full border-0 bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 empty:hidden;
+  }
+  /* core star bar: .rating > div[style=width:%] */
+  .product-details-page .product-review-item .rating {
+    @apply relative inline-block leading-none tracking-wider text-slate-300 before:content-['★★★★★'];
+  }
+  .product-details-page .product-review-item .rating > div {
+    @apply absolute inset-y-0 left-0 overflow-hidden whitespace-nowrap text-amber-400 before:content-['★★★★★'];
+  }
+  .product-details-page .write-review .form-fields {
+    @apply space-y-4;
+  }
+  .product-details-page .write-review .inputs {
+    @apply flex flex-col gap-1.5 text-sm;
+  }
+  .product-details-page .write-review .inputs label {
+    @apply font-medium text-slate-700;
+  }
+  .product-details-page .write-review input[type="text"],
+  .product-details-page .write-review textarea {
+    @apply w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100;
+  }
+  .product-details-page .write-review textarea {
+    @apply min-h-32;
+  }
+  .product-details-page .review-rating {
+    @apply flex flex-wrap items-center gap-3 text-sm;
+  }
+  .product-details-page .review-rating ul {
+    @apply flex items-center gap-2;
+  }
+  .product-details-page .write-review .buttons button,
+  .product-details-page .write-review .write-product-review-button {
+    @apply mt-4 inline-flex items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700;
+  }
+  .product-details-page .write-review .result,
+  .product-details-page .write-review .message-error {
+    @apply rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900;
+  }
+  .field-validation-error {
+    @apply text-xs text-red-600;
+  }
+
+  /* tags + related / also purchased product grids */
+  .product-details-page .product-tags-box .title,
+  .product-details-page .related-products-grid > .title,
+  .product-details-page .also-purchased-products-grid > .title,
+  .product-details-page .product-grid > .title {
+    @apply mb-4 text-lg font-semibold text-slate-900;
+  }
+  .product-details-page .product-tags-list ul {
+    @apply flex flex-wrap gap-1.5;
+  }
+  .product-details-page .product-tags-list li {
+    @apply inline-flex items-center gap-1 text-xs text-slate-400;
+  }
+  .product-details-page .product-tags-list .separator {
+    @apply hidden;
+  }
+  .product-details-page .product-tags-list a {
+    @apply inline-block rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-primary-500 hover:text-primary-600;
+  }
+
+  /* ---------- shopping cart: core partials posted through #shopping-cart-form ---------- */
+  /* order totals (OrderTotals component table) */
+  .total-info .cart-total {
+    @apply w-full text-sm;
+  }
+  .total-info .cart-total td {
+    @apply py-1.5 align-top;
+  }
+  .total-info .cart-total-left {
+    @apply pr-3 whitespace-nowrap text-slate-600;
+  }
+  .total-info .cart-total-right {
+    @apply text-right font-medium text-slate-900;
+  }
+  .total-info .selected-shipping-method,
+  .total-info .giftcard-remaining {
+    @apply block text-xs text-slate-500;
+  }
+  .total-info .order-total td {
+    @apply border-t border-slate-200 pt-3 text-base;
+  }
+  .total-info .order-total .cart-total-left {
+    @apply font-semibold text-slate-900;
+  }
+  .total-info .order-total .cart-total-right {
+    @apply text-lg font-bold;
+  }
+  .total-info .discount-total .cart-total-right,
+  .total-info .order-subtotal-discount .cart-total-right {
+    @apply text-emerald-700;
+  }
+
+  /* empty-value submit buttons used to remove a coupon / gift card */
+  .remove-discount-button,
+  .remove-gift-card-button {
+    @apply ml-1 inline-flex size-5 cursor-pointer items-center justify-center rounded-full bg-slate-200 align-middle text-slate-600 after:content-['×'] hover:bg-red-100 hover:text-red-600;
+  }
+
+  /* coupon + gift card boxes */
+  .cart-collaterals .coupon-box,
+  .cart-collaterals .giftcard-box {
+    @apply space-y-2 rounded-lg border border-slate-200 p-4 text-sm;
+  }
+  .cart-collaterals .title {
+    @apply text-sm font-semibold text-slate-900;
+  }
+  .cart-collaterals .hint {
+    @apply text-xs text-slate-500;
+  }
+  .cart-collaterals .coupon-code {
+    @apply flex overflow-hidden rounded-md border border-slate-300 bg-white focus-within:border-primary-500;
+  }
+  .cart-collaterals .coupon-code input {
+    @apply min-w-0 flex-1 px-3 py-2 text-sm outline-none;
+  }
+  .cart-collaterals .coupon-code button {
+    @apply border-l border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 hover:bg-slate-100;
+  }
+  .cart-collaterals .message-success {
+    @apply text-xs text-emerald-700;
+  }
+  .cart-collaterals .message-failure {
+    @apply text-xs text-red-600;
+  }
+  .cart-collaterals .current-code {
+    @apply flex items-center text-xs text-slate-700;
+  }
+
+  /* estimate shipping trigger (popup itself is core magnific-popup markup) */
+  .common-buttons .estimate-shipping-button {
+    @apply inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50;
+  }
+
+  /* estimate shipping popup (core _EstimateShippingPopUp + magnific-popup; product page and cart) */
+  .mfp-bg {
+    @apply bg-slate-950/50! opacity-100! backdrop-blur-[2px];
+  }
+  .mfp-container {
+    @apply px-4!;
+  }
+  .estimate-shipping-popup {
+    @apply relative mx-auto my-6 w-full max-w-2xl rounded-2xl bg-white p-6 text-left text-sm text-slate-700 shadow-2xl sm:p-8;
+  }
+  .estimate-shipping-popup-zoom-in .mfp-with-anim {
+    @apply translate-y-2 scale-95 opacity-0 transition duration-200 ease-out;
+  }
+  .estimate-shipping-popup-zoom-in.mfp-ready .mfp-with-anim {
+    @apply translate-y-0 scale-100 opacity-100;
+  }
+  .estimate-shipping-popup-zoom-in.mfp-removing .mfp-with-anim {
+    @apply opacity-0;
+  }
+  .estimate-shipping-popup .mfp-close {
+    @apply absolute! right-3! top-3! flex! size-9! items-center! justify-center! rounded-full! text-2xl! leading-none! text-slate-400! opacity-100! hover:bg-slate-100! hover:text-slate-900!;
+  }
+  .estimate-shipping-popup .ship-to-title,
+  .estimate-shipping-popup .choose-shipping-title {
+    @apply mb-3 text-base font-semibold text-slate-900;
+  }
+  .estimate-shipping-popup .choose-shipping-title {
+    @apply mt-6;
+  }
+  .estimate-shipping-popup .shipping-address {
+    @apply grid gap-3 sm:grid-cols-3;
+  }
+  .estimate-shipping-popup .shipping-address .estimate-shipping-row {
+    @apply flex items-center gap-1;
+  }
+  .estimate-shipping-popup .estimate-shipping-address-control {
+    @apply w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100;
+  }
+  .estimate-shipping-popup .required {
+    @apply text-red-500;
+  }
+  .estimate-shipping-popup .shipping-options {
+    @apply overflow-hidden rounded-lg border border-slate-200;
+  }
+  .estimate-shipping-popup .shipping-options .estimate-shipping-row {
+    @apply grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_6rem] items-center gap-2 px-3 py-2.5;
+  }
+  .estimate-shipping-popup .shipping-options-header .estimate-shipping-row {
+    @apply bg-slate-50 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .estimate-shipping-popup .shipping-options-body .shipping-option {
+    @apply cursor-pointer border-t border-slate-100 transition-colors hover:bg-slate-50;
+  }
+  .estimate-shipping-popup .shipping-options-body .shipping-option.active {
+    @apply bg-primary-50 text-primary-700;
+  }
+  .estimate-shipping-popup .shipping-item:last-child {
+    @apply text-right font-semibold text-slate-900;
+  }
+  .estimate-shipping-popup .estimate-shipping-radio {
+    @apply size-4 accent-primary-600;
+  }
+  .estimate-shipping-popup .no-shipping-options {
+    @apply px-3 py-4 text-slate-500;
+  }
+  .estimate-shipping-popup .shipping-options-loading {
+    @apply mx-auto my-4 size-6 animate-spin rounded-full border-2 border-primary-100 border-t-primary-600;
+  }
+  .estimate-shipping-popup .apply-shipping-button-container {
+    @apply mt-6 flex flex-wrap items-center gap-3;
+  }
+  .estimate-shipping-popup .apply-shipping-button {
+    @apply inline-flex items-center rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700;
+  }
+  .estimate-shipping-popup .message-failure {
+    @apply text-sm text-red-600;
+  }
+  /* trigger text built by core (shipping-title / estimated-delivery) */
+  .product-estimate-shipping .shipping-title {
+    @apply flex items-baseline gap-1;
+  }
+  .product-estimate-shipping .shipping-price {
+    @apply font-semibold;
+  }
+  .product-estimate-shipping .shipping-date {
+    @apply text-xs text-slate-500;
+  }
+
+  /* checkout attributes (_CheckoutAttributes) */
+  .cart-options .checkout-attributes dl {
+    @apply space-y-2 text-sm;
+  }
+  .cart-options .checkout-attributes dt {
+    @apply font-semibold text-slate-800;
+  }
+  .cart-options .checkout-attributes select,
+  .cart-options .checkout-attributes input[type="text"],
+  .cart-options .checkout-attributes textarea {
+    @apply w-full max-w-md rounded-md border border-slate-300 bg-white px-3 py-2 text-sm;
+  }
+  .cart-options .selected-checkout-attributes {
+    @apply text-xs text-slate-500;
+  }
+
+  /* cross-sells use the core .product-grid wrapper */
+  .shopping-cart-page .cross-sells > .title,
+  .shopping-cart-page .product-grid > .title {
+    @apply mb-4 mt-4 text-lg font-semibold text-slate-900;
+  }
+
+  /* ---------- one-page checkout (state classes toggled by core public.accordion.js) ---------- */
+  .checkout-page .tab-section {
+    @apply overflow-hidden rounded-xl border border-slate-200 bg-white transition-shadow;
+  }
+  .checkout-page .tab-section.active {
+    @apply border-primary-300 shadow-md ring-1 ring-primary-100;
+  }
+  .checkout-page .step-title {
+    @apply flex items-center gap-3 px-5 py-4 text-slate-400;
+  }
+  .checkout-page .tab-section.allow .step-title {
+    @apply cursor-pointer text-slate-700 hover:bg-slate-50;
+  }
+  .checkout-page .tab-section.active .step-title {
+    @apply cursor-default bg-white text-slate-900 hover:bg-white;
+  }
+  .checkout-page .step-title .number {
+    @apply flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-300 text-xs font-semibold;
+  }
+  /* reached but not current: treat as done */
+  .checkout-page .tab-section.allow:not(.active) .step-title .number {
+    @apply border-primary-200 bg-primary-50 text-primary-700;
+  }
+  .checkout-page .tab-section.active .step-title .number {
+    @apply border-primary-600 bg-primary-600 text-white;
+  }
+  .checkout-page .step-title .title {
+    @apply text-base font-semibold;
+  }
+  .checkout-page .step {
+    @apply space-y-5 border-t border-slate-100 px-5 py-5 text-sm;
+  }
+
+  /* step buttons */
+  .checkout-page .step > .buttons,
+  .checkout-page .step form > .buttons {
+    @apply flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5;
+  }
+  .checkout-page .step .buttons .button-1 {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700;
+  }
+  .checkout-page .step .buttons .back-link {
+    @apply mr-auto;
+  }
+  .checkout-page .step .buttons .back-link a {
+    @apply text-sm font-medium text-slate-500 hover:text-slate-800;
+  }
+  .checkout-page .confirm-order-next-step-button {
+    @apply px-8 py-3 text-base;
+  }
+  .checkout-page .please-wait {
+    @apply inline-flex items-center gap-2 text-sm text-slate-500 before:size-4 before:animate-spin before:rounded-full before:border-2 before:border-primary-100 before:border-t-primary-600 before:content-[''];
+  }
+
+  /* address step (_CreateOrUpdateAddress + OpcBillingAddress / OpcShippingAddress) */
+  .checkout-page .checkout-data .section + .section {
+    @apply mt-5;
+  }
+  .checkout-page .ship-to-same-address .selector,
+  .checkout-page .pickup-in-store .selector {
+    @apply flex items-center gap-2 rounded-md bg-slate-50 px-3 py-2.5 font-medium text-slate-700;
+  }
+  .checkout-page input[type="checkbox"],
+  .checkout-page input[type="radio"] {
+    @apply size-4 shrink-0 accent-primary-600;
+  }
+  .checkout-page .select-billing-address,
+  .checkout-page .select-shipping-address {
+    @apply space-y-2;
+  }
+  .checkout-page .select-billing-address > label,
+  .checkout-page .select-shipping-address > label {
+    @apply block font-medium text-slate-700;
+  }
+  .checkout-page .opc-select-address-container {
+    @apply flex flex-wrap items-center gap-2;
+  }
+  .checkout-page .opc-select-address-container .button-1 {
+    @apply rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50;
+  }
+  .checkout-page .edit-address {
+    @apply grid gap-4 sm:grid-cols-2;
+  }
+  .checkout-page .inputs {
+    @apply flex flex-col gap-1;
+  }
+  .checkout-page .inputs label {
+    @apply font-medium text-slate-700;
+  }
+  /* the marker is toggled with inline display by core scripts (e.g. state required per country), so hide it with sr-only and mirror it on the label */
+  .checkout-page .inputs .required {
+    @apply sr-only;
+  }
+  .checkout-page .inputs:has(.required:not([style*="none"])) > label {
+    @apply after:ml-0.5 after:text-red-500 after:content-['*'];
+  }
+  .checkout-page select,
+  .checkout-page .inputs input[type="text"],
+  .checkout-page .inputs input[type="email"],
+  .checkout-page .inputs input[type="tel"],
+  .checkout-page .inputs textarea,
+  .checkout-page .payment-info input[type="text"],
+  .checkout-page .payment-info select {
+    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100;
+  }
+  .checkout-page .opc-select-address-container select {
+    @apply w-auto min-w-0 flex-1;
+  }
+  .checkout-page .input-validation-error {
+    @apply border-red-400;
+  }
+  .checkout-page .message-error {
+    @apply rounded-md bg-red-50 px-3 py-2 text-sm text-red-800 empty:hidden;
+  }
+
+  /* shipping + payment methods: whole row is a selectable card */
+  .checkout-page .method-list {
+    @apply space-y-2;
+  }
+  .checkout-page .method-list > li {
+    @apply rounded-lg border border-slate-200 p-4 transition-colors has-[input:checked]:border-primary-600 has-[input:checked]:bg-primary-50/60;
+  }
+  .checkout-page .method-list .method-name,
+  .checkout-page .method-list .payment-details {
+    @apply flex items-center gap-3;
+  }
+  .checkout-page .method-list label {
+    @apply cursor-pointer font-medium text-slate-800;
+  }
+  .checkout-page .method-list .method-description,
+  .checkout-page .method-list .payment-description {
+    @apply mt-1 pl-7 text-xs text-slate-500;
+  }
+  .checkout-page .method-list .payment-logo img {
+    @apply max-h-8 w-auto;
+  }
+  .checkout-page .payment-method .method-name {
+    @apply flex-row-reverse justify-end;
+  }
+  .checkout-page .use-reward-points {
+    @apply mb-3 flex items-center gap-2;
+  }
+  .checkout-page .payment-info .info {
+    @apply space-y-3;
+  }
+
+  /* confirm step: order review data + order summary (single column inside the narrow checkout) */
+  .checkout-page .order-review-data {
+    @apply mb-6 grid gap-4 sm:grid-cols-2;
+  }
+  .checkout-page .order-review-data > div {
+    @apply space-y-3 rounded-lg border border-slate-200 p-4;
+  }
+  .checkout-page .order-review-data .title {
+    @apply text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .checkout-page .order-review-data .info-list {
+    @apply space-y-0.5 text-sm text-slate-700;
+  }
+  .checkout-page .order-review-data .name {
+    @apply font-semibold text-slate-900;
+  }
+
+  /* ---------- core pages: generic markup used by most storefront views ---------- */
+  /* titles + body */
+  .page > .page-title {
+    @apply mb-6;
+  }
+  .page > .page-title h1 {
+    @apply text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl;
+  }
+  .page > .page-body {
+    @apply space-y-6 text-sm text-slate-700;
+  }
+  .page .page-body > .description,
+  .topic-page .page-body {
+    @apply max-w-3xl space-y-3 leading-relaxed text-slate-600 [&_a]:underline [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-slate-900 [&_li]:ml-5 [&_ol]:list-decimal [&_ul]:list-disc;
+  }
+  .no-data,
+  .page .result {
+    @apply rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500;
+  }
+  .page .message-error,
+  .page .message-failure {
+    @apply rounded-md bg-red-50 px-3 py-2 text-sm text-red-800 empty:hidden;
+  }
+  .page .message-success {
+    @apply rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800;
+  }
+
+  /* forms: <div class="fieldset"><div class="title"/><div class="form-fields"><div class="inputs">label + control */
+  .page .fieldset {
+    @apply rounded-xl border border-slate-200 bg-white p-5 sm:p-6;
+  }
+  .page .fieldset + .fieldset,
+  .page form > .fieldset + .fieldset {
+    @apply mt-5;
+  }
+  .page .fieldset > .title,
+  .page .fieldset > h2.title {
+    @apply mb-4 text-base font-semibold text-slate-900;
+  }
+  .page .form-fields {
+    @apply grid gap-4 sm:grid-cols-2;
+  }
+  /* full-width rows: long controls, checkbox rows, captcha, attributes */
+  .page .form-fields > .inputs:has(textarea),
+  .page .form-fields > .inputs.reversed,
+  .page .form-fields > .inputs.custom-attributes,
+  .page .form-fields > .captcha-box,
+  .page .form-fields > :not(.inputs) {
+    @apply sm:col-span-2;
+  }
+  .page .inputs {
+    @apply flex flex-col gap-1;
+  }
+  .page .inputs > label {
+    @apply text-sm font-medium text-slate-700;
+  }
+  .page .inputs.reversed {
+    @apply flex-row flex-wrap items-center gap-x-2;
+  }
+  .page .inputs.reversed > label {
+    @apply font-normal;
+  }
+  /* single checkbox rendered after its label (e.g. newsletter): checkbox first, one row */
+  .page .inputs:has(> input[type="checkbox"]):not(.reversed) {
+    @apply flex-row-reverse items-center justify-end gap-2;
+  }
+  .page .inputs .gender {
+    @apply flex flex-wrap items-center gap-4 [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5;
+  }
+  .page .inputs input[type="text"],
+  .page .inputs input[type="email"],
+  .page .inputs input[type="password"],
+  .page .inputs input[type="tel"],
+  .page .inputs input[type="number"],
+  .page .inputs input[type="date"],
+  .page .inputs select,
+  .page .inputs textarea,
+  .page .search-input input[type="text"],
+  .page .search-input select {
+    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100;
+  }
+  .page .inputs textarea {
+    @apply min-h-32;
+  }
+  .page .inputs input[type="file"] {
+    @apply text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-slate-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-50;
+  }
+  .page .inputs input[type="checkbox"],
+  .page .inputs input[type="radio"] {
+    @apply size-4 accent-primary-600;
+  }
+  .page .inputs .input-validation-error {
+    @apply border-red-400;
+  }
+  /* the core required marker (nop-required) renders after the control: hide it and star the label instead */
+  .page .inputs .required {
+    @apply sr-only;
+  }
+  .page .inputs:has(.required:not([style*="none"])) > label {
+    @apply after:ml-0.5 after:text-red-500 after:content-['*'];
+  }
+  .page .inputs .date-picker-wrapper,
+  .page .inputs .login-password {
+    @apply relative flex gap-2 [&>select]:w-auto [&>select]:flex-1;
+  }
+  .page .login-password .password-eye {
+    @apply absolute right-2.5 top-1/2 size-5 -translate-y-1/2 cursor-pointer bg-slate-400 hover:bg-slate-700;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.8' stroke='black'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  .page .forgot-password {
+    @apply ml-auto text-sm;
+  }
+
+  /* buttons used by core views */
+  .page .button-1,
+  .page .button-2,
+  .page .buttons > button,
+  .page .buttons > input[type="submit"],
+  .page .buttons > input[type="button"] {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold transition;
+  }
+  .page .button-1,
+  .page .buttons > input[type="submit"] {
+    @apply bg-primary-600 text-white hover:bg-primary-700;
+  }
+  .page .button-2,
+  .page .buttons > input[type="button"] {
+    @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+  }
+  .page .buttons {
+    @apply flex flex-wrap items-center gap-3 pt-2;
+  }
+  .page form > .buttons,
+  .page .fieldset ~ .buttons {
+    @apply mt-5;
+  }
+
+  /* data tables (order history, wishlist, compare, downloadable products, ...) */
+  .page .table-wrapper {
+    @apply overflow-x-auto rounded-xl border border-slate-200 bg-white;
+  }
+  .page .data-table,
+  .page .compare-products-table,
+  .page table.cart {
+    @apply w-full text-left text-sm;
+  }
+  .page .data-table th,
+  .page .compare-products-table th,
+  .page table.cart th {
+    @apply border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .page .data-table td,
+  .page .compare-products-table td,
+  .page table.cart td {
+    @apply border-b border-slate-100 px-4 py-3 align-top;
+  }
+  /* per-cell labels core shows for its responsive table layout duplicate the header on desktop */
+  .page .data-table .td-title,
+  .page table.cart .td-title {
+    @apply hidden;
+  }
+  .page .data-table tr:last-child td,
+  .page table.cart tr:last-child td {
+    @apply border-b-0;
+  }
+  .page .compare-products-table .picture img,
+  .page table.cart .product-picture img {
+    @apply max-h-24 w-auto object-contain;
+  }
+  .page .compare-products-table .remove-button,
+  .page .clear-list {
+    @apply rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-red-300 hover:text-red-600;
+  }
+
+  /* sitemap */
+  .sitemap-page .page-body {
+    @apply grid gap-5 sm:grid-cols-2 lg:grid-cols-3;
+  }
+  .sitemap-page .page-body > .description {
+    @apply sm:col-span-2 lg:col-span-3;
+  }
+  .sitemap-page .entity {
+    @apply rounded-xl border border-slate-200 bg-white p-5;
+  }
+  .sitemap-page .entity-title h2 {
+    @apply mb-3 text-xs font-semibold uppercase tracking-wide text-slate-900;
+  }
+  .sitemap-page .entity-body ul {
+    @apply space-y-1.5;
+  }
+
+  /* login / register entry */
+  .login-page .customer-blocks {
+    @apply grid gap-5 md:grid-cols-2 md:items-start;
+  }
+  .login-page .new-wrapper,
+  .login-page .returning-wrapper {
+    @apply rounded-xl border border-slate-200 bg-white p-5 sm:p-6;
+  }
+  .login-page .returning-wrapper {
+    @apply md:order-first;
+  }
+  .login-page .customer-blocks .title {
+    @apply mb-3 text-base font-semibold text-slate-900;
+  }
+  .login-page .new-wrapper .text {
+    @apply mb-4 space-y-2 text-sm text-slate-600;
+  }
+  .login-page .form-fields {
+    @apply sm:grid-cols-1;
+  }
+  .login-page .mode-switcher {
+    @apply mt-3 text-sm [&_.mode-button]:font-medium [&_.mode-button]:text-primary-600;
+  }
+  .login-page .external-authentication {
+    @apply empty:hidden;
+  }
+
+  /* blog */
+  .blog-page .post,
+  .blogpost-page .post {
+    @apply space-y-3 border-b border-slate-200 pb-6;
+  }
+  .blog-page .post-title {
+    @apply text-lg font-semibold text-slate-900 hover:text-primary-600;
+  }
+  .blog-page .post-date,
+  .blogpost-page .post-date {
+    @apply text-xs text-slate-500;
+  }
+  .blog-page .post-body,
+  .blogpost-page .post-body {
+    @apply space-y-3 leading-relaxed text-slate-600;
+  }
+  .blog-page .blog-details {
+    @apply flex flex-wrap items-center gap-4 text-xs [&_a]:font-medium;
+  }
+  .blog-page .post .tags,
+  .blogpost-page .tags {
+    @apply flex flex-wrap items-center gap-1.5 text-xs text-slate-500 [&_ul]:flex [&_ul]:flex-wrap [&_ul]:gap-1.5 [&_.separator]:hidden [&_a]:inline-block [&_a]:rounded-full [&_a]:border [&_a]:border-slate-200 [&_a]:px-2.5 [&_a]:py-0.5 [&_a]:text-slate-600 [&_a:hover]:border-primary-500 [&_a:hover]:text-primary-600;
+  }
+  .blog-page .link-rss {
+    @apply inline-flex items-center gap-1 text-xs font-medium text-orange-600;
+  }
+
+  /* account area: navigation block in the sidebar */
+  .side-2 .block-account-navigation .listbox .list a {
+    @apply py-2;
+  }
+  .side-2 .block-account-navigation .listbox .list .active > a {
+    @apply bg-primary-50;
+  }
+
+  /* address cards (account addresses, order details) and order cards (order history) */
+  .address-list,
+  .order-list {
+    @apply grid gap-4 sm:grid-cols-2;
+  }
+  .address-list .address-item,
+  .order-list .order-item {
+    @apply flex flex-col rounded-xl border border-slate-200 bg-white p-5;
+  }
+  .address-list .address-item > .title,
+  .order-list .order-item > .title {
+    @apply mb-3 text-base font-semibold text-slate-900;
+  }
+  .address-list .info,
+  .order-list .info {
+    @apply flex-1 space-y-0.5 text-sm text-slate-600 [&_label]:mr-1 [&_label]:text-slate-500 [&_li:empty]:hidden;
+  }
+  .address-list .info .name {
+    @apply font-medium text-slate-900;
+  }
+  .address-list .buttons,
+  .order-list .buttons {
+    @apply mt-4 border-t border-slate-100 pt-4;
+  }
+  .address-list ~ .add-button,
+  .page .add-button {
+    @apply mt-5;
+  }
+  .order-list .order-status {
+    @apply font-semibold text-slate-900;
+  }
+  .order-filters {
+    @apply mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4;
+  }
+  .order-filters__row {
+    @apply flex flex-wrap items-end gap-3;
+  }
+  .order-filters__label {
+    @apply text-xs font-medium text-slate-600;
+  }
+  .order-filters__input {
+    @apply rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm;
+  }
+
+  /* order details */
+  .order-details-page .order-overview {
+    @apply mb-6 flex flex-wrap items-baseline justify-between gap-3 rounded-xl border border-slate-200 bg-white p-5 [&_.order-number]:text-lg [&_.order-number]:font-semibold [&_.order-number]:text-slate-900 [&_ul]:flex [&_ul]:flex-wrap [&_ul]:gap-x-5 [&_ul]:text-sm [&_ul]:text-slate-600;
+  }
+  .order-details-page .order-details-area {
+    @apply mb-6 grid gap-4 sm:grid-cols-2 [&>div]:rounded-xl [&>div]:border [&>div]:border-slate-200 [&>div]:bg-white [&>div]:p-5 [&_.title]:mb-2 [&_.title]:text-xs [&_.title]:font-semibold [&_.title]:uppercase [&_.title]:tracking-wide [&_.title]:text-slate-500 [&_.info]:space-y-0.5 [&_.info]:text-sm [&_.info]:text-slate-600;
+  }
+  .order-details-page .order-details-area .payment-method-info,
+  .order-details-page .order-details-area .shipping-method-info,
+  .order-details-page .order-details-area .pickup-point-info {
+    @apply mt-4 border-t border-slate-100 pt-4;
+  }
+  .order-details-page .section > .title {
+    @apply mb-3 text-base font-semibold text-slate-900;
+  }
+  .order-details-page .section + .section {
+    @apply mt-6;
+  }
+  .order-details-page .page-title {
+    @apply flex flex-wrap items-center justify-between gap-3 [&_h1]:mr-auto [&_a]:inline-flex [&_a]:items-center [&_a]:rounded-md [&_a]:border [&_a]:border-slate-300 [&_a]:px-3 [&_a]:py-1.5 [&_a]:text-xs [&_a]:font-medium [&_a]:text-slate-700 [&_a:hover]:bg-slate-50;
+  }
+  .order-details-page .total-info {
+    @apply ml-auto max-w-sm rounded-xl border border-slate-200 bg-slate-50 p-5;
+  }
+
+  /* external authentication (login / register): "or" divider + provider buttons, e.g. Google sign-in */
+  .external-authentication {
+    @apply mx-auto mt-8 flex max-w-sm flex-col gap-3;
+  }
+  .external-authentication > .title {
+    @apply flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-slate-400 before:h-px before:flex-1 before:bg-slate-200 before:content-[''] after:h-px after:flex-1 after:bg-slate-200 after:content-[''];
+  }
+
+  /* ---------- topics (shared TopicBlock component) ---------- */
+  .topic-block-title h2 {
+    @apply mb-3 text-xl font-bold text-slate-900;
+  }
+  .topic-block-body {
+    @apply space-y-3 text-sm leading-relaxed text-slate-700 [&_a]:underline;
+  }
+
+  /* homepage hero wraps the "HomepageText" topic */
+  .home-hero .topic-block-title h2 {
+    @apply mb-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl;
+  }
+  .home-hero .topic-block-body {
+    @apply space-y-3 text-base leading-relaxed text-white/85 sm:text-lg;
+  }
+  .home-hero .topic-block-body a {
+    @apply font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white;
+  }
+
+  /* overlay shown by core displayAjaxLoading() during ajax cart requests */
+  .ajax-loading-block-window {
+    @apply fixed inset-0 z-[70] bg-white/40;
+  }
+  .ajax-loading-block-window::after {
+    @apply absolute left-1/2 top-1/2 -ml-5 -mt-5 size-10 animate-spin rounded-full border-4 border-primary-100 border-t-primary-600 content-[''];
+  }
+}

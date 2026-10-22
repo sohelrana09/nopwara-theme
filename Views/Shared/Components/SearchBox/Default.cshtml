@@ -1,0 +1,192 @@
+@model SearchBoxModel
+
+@inject Nop.Services.Cms.IWidgetPluginManager widgetPluginManager
+@inject Nop.Core.IStoreContext storeContext
+@inject Nop.Core.IWorkContext workContext
+
+@{
+    const string categoryFormName = "cid";
+    const string termFormName = "q";
+    const string searchBoxId = "small-searchterms";
+
+    //Nopwara: the Nopwara instant search plugin (Widgets.NopwaraSearch) renders its own dropdown in the "searchbox" widget zone,
+    //so the core jQuery UI autocomplete is skipped while that widget is active
+    var instantSearchActive = await widgetPluginManager.IsPluginActiveAsync("Widgets.NopwaraSearch",
+        await workContext.GetCurrentCustomerAsync(), (await storeContext.GetCurrentStoreAsync()).Id);
+}
+
+@*Nopwara: markup restyled only; ids, names and the jQuery scripts below are unchanged from core*@
+<form asp-route="@NopRouteNames.General.SEARCH" method="get" id="small-search-box-form"
+      class="flex w-full items-stretch overflow-hidden rounded-lg border border-slate-300 bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100">
+    @if (Model.ShowSearchBox)
+    {
+        <input type="text" class="search-box-text min-w-0 flex-1 border-0 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-slate-400" id="@searchBoxId" autocomplete="off" name="@termFormName" placeholder="@T("Search.SearchBox.Tooltip")" aria-label="@T("Search.SearchBox.Text.Label")" />
+        @if(Model.ShowSearchBoxCategories)
+        {
+            <select asp-for="SearchCategoryId" name="@categoryFormName" asp-items="Model.AvailableCategories" class="search-box-category hidden max-w-44 border-0 border-l border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 outline-none sm:block"></select>
+            <script asp-location="Footer">
+                $(function () {
+                    $('#@Html.IdFor(m => m.SearchCategoryId)').on('change', function () {
+                        $('#@searchBoxId').focus();
+                    });
+                });
+            </script>
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.SearchBoxBeforeSearchButton, additionalData = Model })
+        <button type="submit" class="button-1 search-box-button flex items-center gap-2 bg-primary-600 px-4 text-sm font-semibold text-white hover:bg-primary-700">
+            <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+            <span class="sr-only sm:not-sr-only">@T("Search.Button")</span>
+        </button>
+
+        <script asp-location="Footer">
+            $("#small-search-box-form").on("submit", function (event) {
+
+                event.preventDefault();
+
+                @if(Model.SearchTermMinimumLength > 0)
+                {
+                    <text>
+                    if ($("#@searchBoxId").val() == "") {
+                        alert('@Html.Raw(JavaScriptEncoder.Default.Encode(T("Search.EnterSearchTerms").Text))');
+                        $("#@searchBoxId").focus();
+                        return;
+                    }
+                    </text>
+                }
+
+                var form = document.getElementById('small-search-box-form');
+                var formData = new FormData(form);
+
+                @if(Model.ShowSearchBoxCategories)
+                {
+                    <text>
+                    var selectedCategory = formData.get('@categoryFormName');
+                    if (selectedCategory && selectedCategory != '0') {
+                        formData.append('advs', true);
+                        formData.append('isc', true);
+                    }
+                    </text>
+                }
+
+                window.location.href = `@Url.RouteUrl(NopRouteNames.General.SEARCH)?${new URLSearchParams(formData).toString()}`;
+            });
+        </script>
+
+        @if (Model.AutoCompleteEnabled && !instantSearchActive)
+        {
+            <script asp-location="Footer">
+                $(function() {
+                    var cache = new Map();
+                    var showLinkToResultSearch;
+                    var searchText;
+
+                    $('#@searchBoxId').autocomplete({
+                        delay: 500,
+                        minLength: 0,
+                        source: function (request, response) {
+                            var term = request.term && request.term.trim().toLowerCase();
+                            @if(Model.SearchHistoryEnabled)
+                            {
+                            <text>
+                            if (term.length == 0) {
+                                $.getJSON('@(Url.RouteUrl(NopRouteNames.Ajax.PRODUCT_SEARCH_HISTORY_AUTOCOMPLETE))', function (data, status, xhr) {
+                                  response(data);
+                                });
+                                return;
+                            }
+                            </text>
+                            }
+
+                            if (term.length < @Model.SearchTermMinimumLength) {
+                                response();
+                                return;
+                            }
+
+                            var categoryElement = $('#@Html.IdFor(m => m.SearchCategoryId)');
+                            var categoryId = categoryElement.length == 0 ? 0 : categoryElement.val()
+
+                            var query = { term, categoryId };
+                            var cacheKey = JSON.stringify(query);
+
+                            if (cache.has(cacheKey)) {
+                                response(cache.get(cacheKey));
+                                return;
+                            }
+
+                            $.getJSON('@(Url.RouteUrl(NopRouteNames.Ajax.PRODUCT_SEARCH_AUTOCOMPLETE))', query, function (data, status, xhr) {
+                                cache.set(cacheKey, data);
+                                response(data);
+                            });
+                        },
+                        appendTo: '.search-box',
+                        select: function(event, ui) {
+                            $("#@searchBoxId").val(ui.item.label);
+                            setLocation(ui.item.producturl);
+                            return false;
+                        },
+                        //append link to the end of list
+                        open: function(event, ui) {
+                            //display link to search page
+                            if (showLinkToResultSearch) {
+                                searchText = document.getElementById("@searchBoxId").value;
+                                $(".ui-autocomplete").append("<li class=\"ui-menu-item\" role=\"presentation\"><a href=\"/search?q=" + searchText + "\">@T("Search.SearchBox.SearchPageLink")</a></li>");
+                            }
+                        }
+                    })
+                    .focus(function () {
+                        $(this).autocomplete('search', $(this).val());
+                    })
+                    .data("ui-autocomplete")._renderItem = function(ul, item) {
+                        //html encode
+                        var t = htmlEncode(item.label);
+                        showLinkToResultSearch = item.showlinktoresultsearch;
+
+                        var li = $("<li class='search-box-item'></li>");
+
+                        li.data("item.autocomplete", item);
+
+                        var link = $("<a class='search-box-link'></a>");
+
+                        if (item.IsKeyword) {
+                            link.prop("href", "@Url.RouteUrl(NopRouteNames.General.SEARCH)?q=" + t)
+                        }
+                        else {
+                        @if(Model.ShowProductImagesInSearchAutoComplete)
+                        {
+                            <text>
+                            link.append('<img src="' + item.productpictureurl + '" width="@Model.AutoCompleteSearchThumbPictureSize">');
+                            </text>
+                        }
+                        }
+                        
+                        link.append('<span>' + t + '</span>');
+
+                        li.append(link);
+                        
+                        if (item.IsKeyword) {
+                            var removeBtn = $("<span class='search-box-remove'>x</span>");
+                            removeBtn.on("click", function(e) {
+                                e.preventDefault();
+
+                                var postData = { term: t };
+                                addAntiForgeryToken(postData);
+
+                                $.post("@Url.RouteUrl(NopRouteNames.Ajax.DELETE_PRODUCT_SEARCH_TERMS)", postData, function() {
+                                    $('#@searchBoxId').autocomplete("search", "");
+                                });
+
+                                return false;
+                            });
+
+                            li.append(removeBtn);
+                        }
+
+                        return li.appendTo(ul);
+                    };
+
+                });
+            </script>
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.SearchBox, additionalData = Model })
+    }
+</form>

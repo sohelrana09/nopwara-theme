@@ -1,0 +1,121 @@
+@model ProductDetailsModel.AddToCartModel
+@using Nop.Core.Domain.Orders
+@*
+    Nopwara add to cart. Ids and the jQuery scripts are unchanged from core.
+    The Alpine +/- stepper edits the real input and dispatches "input", so the core
+    product_quantity_changed trigger still fires.
+*@
+@if (Model.UpdatedShoppingCartItemId > 0)
+{
+    <input asp-for="UpdatedShoppingCartItemId" type="hidden" />
+}
+@if (!Model.DisableBuyButton || Model.CustomerEntersPrice)
+{
+    @*data-select-attribute: message used by the attribute check in nopwara.js (same text as the server message)*@
+    <div class="add-to-cart space-y-3" data-select-attribute="@T("ShoppingCart.SelectAttribute").Text">
+        @if (Model.CustomerEntersPrice)
+        {
+            <div class="customer-entered-price space-y-1">
+                <div class="price-input flex items-center gap-2">
+                    <label asp-for="CustomerEnteredPrice" asp-postfix=":" class="enter-price-label text-sm font-medium text-slate-700"></label>
+                    @*round price*@
+                    <input asp-for="CustomerEnteredPrice" value="@Convert.ToInt32(Math.Ceiling(Model.CustomerEnteredPrice))" class="enter-price-input w-32 rounded-md border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <div class="price-range text-xs text-slate-500">
+                    @Model.CustomerEnteredPriceRange
+                </div>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Model.MinimumQuantityNotification))
+        {
+            <div class="min-qty-notification text-xs text-amber-700">@Model.MinimumQuantityNotification</div>
+        }
+        @if (!Model.DisableBuyButton)
+        {
+            <div class="add-to-cart-panel flex flex-wrap items-stretch gap-3">
+                <label asp-for="EnteredQuantity" asp-postfix=":" class="qty-label sr-only"></label>
+                @if (Model.AllowedQuantities.Count > 0)
+                {
+                    <select asp-for="EnteredQuantity" asp-items="Model.AllowedQuantities" id="product_enteredQuantity_@Model.ProductId" class="qty-dropdown rounded-md border border-slate-300 bg-white px-3 text-sm" aria-label=@T("Products.Qty.AriaLabel")></select>
+                    <script asp-location="Footer">
+                        $(function() {
+                            $("#product_enteredQuantity_@Model.ProductId").on("change", function () {
+                                var data = {
+                                    productId: @Model.ProductId,
+                                    quantity: $('#product_enteredQuantity_@Model.ProductId').find(":selected").text()
+                                };
+                                $(document).trigger({ type: "product_quantity_changed", changedData: data });
+                            });
+                        });
+                    </script>
+                }
+                else
+                {
+                    <div class="flex items-stretch overflow-hidden rounded-md border border-slate-300 bg-white"
+                         x-data="{
+                             change(delta) {
+                                 const input = this.$refs.qty;
+                                 const value = Math.max(1, (parseInt(input.value, 10) || 0) + delta);
+                                 input.value = value;
+                                 input.dispatchEvent(new Event('input', { bubbles: true }));
+                             }
+                         }">
+                        <button type="button" class="px-3 text-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900" @@click="change(-1)" aria-label="-">&minus;</button>
+                        <input asp-for="EnteredQuantity" id="product_enteredQuantity_@Model.ProductId" x-ref="qty" class="qty-input w-12 border-x border-slate-200 text-center text-sm outline-none" type="text" inputmode="numeric" aria-label=@T("Products.Qty.AriaLabel") />
+                        <button type="button" class="px-3 text-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900" @@click="change(1)" aria-label="+">+</button>
+                    </div>
+                    <script asp-location="Footer">
+                        //when a customer clicks 'Enter' button we submit the "add to cart" button (if visible)
+                        $(function() {
+                            $("#@Html.IdFor(model => model.EnteredQuantity)").on("keydown", function(event) {
+                                if (event.keyCode == 13) {
+                                    $("#add-to-cart-button-@Model.ProductId").trigger("click");
+                                    return false;
+                                }
+                            });
+
+                            $("#product_enteredQuantity_@Model.ProductId").on("input propertychange paste", function () {
+                                var data = {
+                                    productId: @Model.ProductId,
+                                    quantity: $('#product_enteredQuantity_@Model.ProductId').val()
+                                };
+                                $(document).trigger({ type: "product_quantity_changed", changedData: data });
+                            });
+                        });
+                    </script>
+                }
+                @{
+                    var addToCartText = "";
+                    if (Model.UpdatedShoppingCartItemId > 0 && Model.UpdateShoppingCartItemType.HasValue && Model.UpdateShoppingCartItemType.Value == ShoppingCartType.ShoppingCart)
+                    {
+                        addToCartText = T("ShoppingCart.AddToCart.Update").Text;
+                    }
+                    else
+                    {
+                        addToCartText = T("ShoppingCart.AddToCart").Text;
+                        if (Model.IsRental)
+                        {
+                            addToCartText = T("ShoppingCart.Rent").Text;
+                        }
+                        if (Model.AvailableForPreOrder)
+                        {
+                            addToCartText = T("ShoppingCart.PreOrder").Text;
+                        }
+                    }
+                    <button type="button" id="add-to-cart-button-@Model.ProductId" class="add-to-cart-button btn btn-primary flex-1 py-3 text-base" data-productid="@Model.ProductId" onclick="AjaxCart.addproducttocart_details('@Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_CART_DETAILS, new { productId = Model.ProductId, shoppingCartTypeId = (int)ShoppingCartType.ShoppingCart })', '#product-details-form');return false;">
+                        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007Z" /></svg>
+                        @addToCartText
+                    </button>
+                }
+            </div>
+            if (!string.IsNullOrEmpty(Model.PreOrderAvailabilityStartDateTimeUserTime))
+            {
+                <div class="pre-order-availability-date text-sm text-slate-600">
+                    <label class="font-medium">@T("ShoppingCart.PreOrderAvailability"):</label>
+                    @Html.Raw(Model.PreOrderAvailabilityStartDateTimeUserTime)
+                </div>
+            }
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsAddInfo, additionalData = Model })
+    </div>
+}

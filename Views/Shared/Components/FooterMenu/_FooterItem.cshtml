@@ -1,0 +1,12 @@
+@model MenuItemModel
+
+<li class="footer-menu__item @Model.CssClass" role="none">
+    @if (!string.IsNullOrEmpty(Model.Url))
+    {
+        <a href="@Model.Url" class="footer-menu__link" role="menuitem">@Model.Title</a>
+    }
+    else
+    {
+        <span role="menuitem">@Model.Title</span>
+    }
+</li>

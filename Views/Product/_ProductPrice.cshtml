@@ -1,0 +1,69 @@
+@model ProductPriceModel
+
+@using Nop.Core
+@using Nop.Core.Domain.Tax
+
+@inject IWorkContext workContext
+
+@*Nopwara: keep .price-value-{id}, #price-value-{id} and #base-price-pangv-{id}; the attribute-change handler updates them*@
+@if (!Model.CustomerEntersPrice)
+{
+    <div class="prices space-y-1">
+        @if (Model.CallForPrice)
+        {
+            <div class="product-price call-for-price text-lg font-semibold text-slate-900">
+                <span>@T("Products.CallForPrice")</span>
+            </div>
+        }
+        else
+        {
+            if (Model.IsRental)
+            {
+                <div class="rental-price text-sm text-slate-600">
+                    <span>@T("Products.Price.RentalPrice"):</span>
+                    <span class="font-semibold text-slate-900">@Model.RentalPrice</span>
+                </div>
+            }
+            if (!string.IsNullOrWhiteSpace(Model.OldPrice))
+            {
+                <div class="old-product-price text-sm text-slate-500">
+                    <span>@T("Products.Price.OldPrice"):</span>
+                    <span class="line-through">@Model.OldPrice</span>
+                </div>
+            }
+            var hasDiscount = !string.IsNullOrWhiteSpace(Model.PriceWithDiscount);
+            <div class="@(hasDiscount ? "non-discounted-price text-sm text-slate-500" : "product-price text-3xl font-bold tracking-tight text-slate-900")">
+                @if (!string.IsNullOrWhiteSpace(Model.OldPrice) || hasDiscount)
+                {
+                    <label for="price-value-@(Model.ProductId)" class="mr-1 text-sm font-normal text-slate-500">@T("Products.Price"):</label>
+                }
+                <span @if (!hasDiscount) { <text> id="price-value-@(Model.ProductId)" class="price-value-@(Model.ProductId)" </text> }>
+                    @Html.Raw(Model.Price)
+                </span>
+            </div>
+            if (hasDiscount)
+            {
+                <div class="product-price discounted-price text-3xl font-bold tracking-tight text-emerald-700">
+                    <span class="mr-1 text-sm font-normal text-slate-500">@T("Products.Price.WithDiscount"):</span>
+                    <span class="price-value-@(Model.ProductId)">
+                        @Html.Raw(Model.PriceWithDiscount)
+                    </span>
+                </div>
+            }
+            if (!string.IsNullOrEmpty(Model.BasePricePAngV))
+            {
+                <div class="base-price-pangv text-xs text-slate-500" id="base-price-pangv-@Model.ProductId">
+                    @Model.BasePricePAngV
+                </div>
+            }
+            if (Model.DisplayTaxShippingInfo)
+            {
+                var inclTax = await workContext.GetTaxDisplayTypeAsync() == TaxDisplayType.IncludingTax;
+                //tax info is already included in the price (incl/excl tax). that's why we display only shipping info here
+                <div class="tax-shipping-info text-xs text-slate-500 [&_a]:underline">
+                    @T(inclTax ? "Products.Price.TaxShipping.InclTax" : "Products.Price.TaxShipping.ExclTax", await NopUrl.RouteTopicUrlAsync("shippinginfo"))
+                </div>
+            }
+        }
+    </div>
+}

@@ -1,0 +1,84 @@
+@{
+    Layout = "_Root";
+}
+@{
+    //current category ID
+    var currentCategoryId = 0;
+    if (Url.ActionContext.RouteData.Values["controller"].ToString().Equals("catalog", StringComparison.InvariantCultureIgnoreCase) &&
+        Url.ActionContext.RouteData.Values["action"].ToString().Equals("category", StringComparison.InvariantCultureIgnoreCase))
+    {
+        currentCategoryId = Convert.ToInt32(Url.ActionContext.RouteData.Values["categoryId"].ToString());
+    }
+
+    //current manufacturer ID
+    var currentManufacturerId = 0;
+    if (Url.ActionContext.RouteData.Values["controller"].ToString().Equals("catalog", StringComparison.InvariantCultureIgnoreCase) &&
+        Url.ActionContext.RouteData.Values["action"].ToString().Equals("manufacturer", StringComparison.InvariantCultureIgnoreCase))
+    {
+        currentManufacturerId = Convert.ToInt32(Url.ActionContext.RouteData.Values["manufacturerId"].ToString());
+    }
+
+    //current product ID
+    var currentProductId = 0;
+    if (Url.ActionContext.RouteData.Values["controller"].ToString().Equals("product", StringComparison.InvariantCultureIgnoreCase) &&
+        Url.ActionContext.RouteData.Values["action"].ToString().Equals("productdetails", StringComparison.InvariantCultureIgnoreCase))
+    {
+        currentProductId = Convert.ToInt32(Url.ActionContext.RouteData.Values["productId"].ToString());
+    }
+
+    //Nopwara: label for the mobile sidebar toggle; add the resource in admin to translate it
+    //pages with their own sidebar (account pages: customer navigation) get its name; catalog pages get "Filters"
+    var sidebarToggleText = IsSectionDefined("left")
+        ? T("Account.Navigation").Text
+        : await NopwaraLocalization.GetResourceAsync("Nopwara.Sidebar.Toggle", (await NopwaraWorkContext.GetWorkingLanguageAsync()).Id, logIfNotFound: false, defaultValue: "Filters");
+}
+
+@if (IsSectionDefined("Breadcrumb"))
+{
+    <div class="site-container pt-4">
+        @await RenderSectionAsync("Breadcrumb", false)
+    </div>
+}
+
+@*Nopwara: sidebar column on lg+, collapsible panel (Alpine) below lg*@
+<div class="site-container grid gap-6 py-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10" x-data="{ sidebarOpen: false }">
+    <button type="button"
+            class="btn justify-between border border-slate-300 text-slate-700 lg:hidden"
+            @@click="sidebarOpen = !sidebarOpen"
+            :aria-expanded="sidebarOpen"
+            aria-controls="nopwara-sidebar">
+        <span class="inline-flex items-center gap-2">
+            <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+            @sidebarToggleText
+        </span>
+        <svg class="size-4 transition-transform" :class="sidebarOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+    </button>
+
+    <aside id="nopwara-sidebar" class="side-2 space-y-6 max-lg:hidden max-lg:data-open:block" :data-open="sidebarOpen">
+        @if (IsSectionDefined("left"))
+        {
+            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.LeftSideColumnBefore })
+            @await RenderSectionAsync("left")
+            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.LeftSideColumnAfter })
+        }
+        else
+        {
+            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.LeftSideColumnBefore })
+            @await RenderSectionAsync("CatalogFilters", false)
+            @await Component.InvokeAsync(typeof(CategoryNavigationViewComponent), new { currentCategoryId = currentCategoryId, currentProductId = currentProductId })
+            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.LeftSideColumnAfterCategoryNavigation })
+            @await Component.InvokeAsync(typeof(ManufacturerNavigationViewComponent), new { currentManufacturerId = currentManufacturerId })
+            @await Component.InvokeAsync(typeof(VendorNavigationViewComponent))
+            @await Component.InvokeAsync(typeof(RecentlyViewedProductsBlockViewComponent), new { productThumbPictureSize = 64 })
+            @await Component.InvokeAsync(typeof(PopularProductTagsViewComponent))
+            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.LeftSideColumnAfter })
+        }
+    </aside>
+
+    @*.center-2 .page is used by public.catalogproducts.js to scroll after ajax filtering*@
+    <section class="center-2 min-w-0">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.MainColumnBefore })
+        @RenderBody()
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.MainColumnAfter })
+    </section>
+</div>

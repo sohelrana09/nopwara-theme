@@ -1,0 +1,26 @@
+@using Nop.Core.Domain.Catalog
+@using Nop.Services.Themes
+
+@inject CatalogSettings catalogSettings
+@inject IThemeContext themeContext
+
+@{
+    Layout = "";
+    var themeName = await themeContext.GetWorkingThemeNameAsync();
+
+    //Tailwind build output (see tailwind/README.md)
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/styles.css");
+
+    //footer scripts render in reverse order of registration: nopwara.js, then Alpine, then core jQuery scripts
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/alpine.min.js");
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/nopwara.js");
+    //catalog navigation (history, load more, price range, filter chips); inert on pages without CatalogProducts
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/nopwara-catalog.js");
+
+    //keep vendor CSS needed by core views that are not overridden yet
+    if (catalogSettings.DisplayAllPicturesOnCatalogPages)
+    {
+        NopHtml.AppendCssFileParts("~/lib_npm/swiper/swiper-bundle.min.css");
+    }
+    NopHtml.AppendCssFileParts("~/lib_npm/jquery-ui-dist/jquery-ui.min.css");
+}

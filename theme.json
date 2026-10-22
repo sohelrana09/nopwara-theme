@@ -1,0 +1,7 @@
+{
+  "SystemName": "Nopwara",
+  "FriendlyName": "Nopwara",
+  "SupportRTL": false,
+  "PreviewImageUrl": "~/Themes/Nopwara/preview.jpg",
+  "PreviewText": "Lightweight Tailwind CSS + Alpine.js theme"
+}

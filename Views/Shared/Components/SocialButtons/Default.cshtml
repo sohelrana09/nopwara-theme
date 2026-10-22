@@ -1,0 +1,24 @@
+@model SocialModel
+
+@{
+    var networks = new (string CssClass, string Url, string Label)[]
+    {
+        ("facebook", Model.FacebookLink, T("Footer.FollowUs.Facebook").Text),
+        ("x", Model.XLink, T("Footer.FollowUs.X").Text),
+        ("youtube", Model.YoutubeLink, T("Footer.FollowUs.Youtube").Text),
+        ("instagram", Model.InstagramLink, T("Footer.FollowUs.Instagram").Text),
+        ("tiktok", Model.TikTokLink, T("Footer.FollowUs.TikTok").Text),
+        ("snapchat", Model.SnapchatLink, T("Footer.FollowUs.Snapchat").Text),
+        ("pinterest", Model.PinterestLink, T("Footer.FollowUs.Pinterest").Text),
+        ("tumblr", Model.TumblrLink, T("Footer.FollowUs.Tumblr").Text)
+    };
+}
+<ul class="networks flex flex-wrap gap-2">
+    @foreach (var network in networks.Where(n => !string.IsNullOrEmpty(n.Url)))
+    {
+        <li class="@network.CssClass">
+            <a href="@network.Url" target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center rounded-full border border-slate-700 px-3 py-1.5 text-xs font-medium hover:border-slate-500">@network.Label</a>
+        </li>
+    }
+</ul>

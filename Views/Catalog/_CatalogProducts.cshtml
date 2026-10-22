@@ -1,0 +1,61 @@
+@model CatalogProductsModel
+
+@*
+    Nopwara: core wrapper + active filter chips. nopwara-catalog.js (loaded globally from Head.cshtml) extends
+    CatalogProducts with back/forward history, "load more" and the chips; the core events and hooks are unchanged.
+*@
+@{
+    //theme strings: add the resources in admin to translate them (missing ones fall back to English without logging)
+    var languageId = (await NopwaraWorkContext.GetWorkingLanguageAsync()).Id;
+    async Task<string> Text(string key, string fallback) => await NopwaraLocalization.GetResourceAsync(key, languageId, logIfNotFound: false, defaultValue: fallback);
+}
+
+<script src="~/js/public.catalogproducts.js" asp-location="Footer"></script>
+
+<div class="active-filters mb-4 flex flex-wrap items-center gap-2"
+     x-data="nopwaraActiveFilters"
+     x-show="chips.length"
+     x-cloak>
+    <span class="sr-only">@await Text("Nopwara.Catalog.ActiveFilters", "Active filters")</span>
+    <template x-for="chip in chips" :key="chip.key">
+        <button type="button" x-on:click="remove(chip)"
+                class="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 py-1 pl-3 pr-2 text-xs font-medium text-primary-700 transition hover:border-primary-300 hover:bg-primary-100">
+            <span x-text="chip.label"></span>
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            <span class="sr-only">@await Text("Nopwara.Catalog.RemoveFilter", "Remove filter")</span>
+        </button>
+    </template>
+    <button type="button" x-show="chips.length > 1" x-on:click="clear()"
+            class="ml-1 text-xs font-semibold text-slate-600 underline-offset-2 hover:text-slate-900 hover:underline">
+        @await Text("Nopwara.Catalog.ClearFilters", "Clear all")
+    </button>
+</div>
+
+<div class="products-container" data-load-more-text="@await Text("Nopwara.Catalog.LoadMore", "Show more products")">
+    <div class="ajax-products-busy"></div>
+    <div class="products-wrapper">
+        @await Html.PartialAsync("_ProductsInGridOrLines", Model)
+    </div>
+</div>
+<script asp-location="Footer">
+    $(function() {
+        CatalogProducts.init({
+            ajax: @Model.UseAjaxLoading.ToString().ToLowerInvariant(),
+            browserPath: '@Context.Request.Path',
+            fetchUrl: '@ViewData["fetchUrl"]'
+        });
+
+        addPagerHandlers();
+        $(CatalogProducts).on('loaded', function () {
+            addPagerHandlers();
+        });
+    });
+
+    function addPagerHandlers() {
+        $('[data-page]').off('click.nopwara').on('click.nopwara', function (e) {
+            e.preventDefault();
+            CatalogProducts.getProducts($(this).data('page'));
+            return false;
+        });
+    }
+</script>

@@ -1,0 +1,101 @@
+@model CatalogProductsModel
+
+@*Nopwara: markup restyled; ids, data-viewmode attributes and the jQuery handlers (read by CatalogProducts) are unchanged from core*@
+@if (Model.Products.Count <= 0 &&
+     !Model.PriceRangeFilter.Enabled &&
+     !Model.SpecificationFilter.Enabled &&
+     !Model.ManufacturerFilter.Enabled)
+{
+    return;
+}
+
+@{
+    const string selectCss = "rounded-md border border-slate-300 bg-white py-1.5 pl-2 pr-7 text-sm text-slate-700 focus:border-primary-500 focus:outline-none";
+    const string viewModeCss = "viewmode-icon inline-flex size-9 items-center justify-center rounded-md border border-slate-300 text-slate-500 hover:text-slate-900 [&.selected]:border-primary-600 [&.selected]:bg-primary-50 [&.selected]:text-primary-700";
+}
+<div class="product-selectors flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+    @*view mode*@
+    @if (Model.AllowProductViewModeChanging)
+    {
+        <div class="product-viewmode flex items-center gap-2">
+            <span>@T("Catalog.ViewMode")</span>
+            @if (Model.AvailableViewModes.Count > 1)
+            {
+                var gridMode = Model.AvailableViewModes[0];
+                var listMode = Model.AvailableViewModes[1];
+
+                <a class="@viewModeCss @if (gridMode.Selected){<text>selected</text>}" data-viewmode="@gridMode.Value" title="@gridMode.Text" tabindex="0" role="button" href="#">
+                    <span class="sr-only">@gridMode.Text</span>
+                    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" /></svg>
+                </a>
+                <a class="@viewModeCss @if (listMode.Selected){<text>selected</text>}" data-viewmode="@listMode.Value" title="@listMode.Text" tabindex="0" role="button" href="#">
+                    <span class="sr-only">@listMode.Text</span>
+                    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+                </a>
+            }
+        </div>
+        <script asp-location="Footer">
+            $(function() {
+                var $viewModeEls = $('[data-viewmode]');
+                $viewModeEls.on('click', function () {
+                    if (!$(this).hasClass('selected')) {
+                        $viewModeEls.toggleClass('selected');
+                        CatalogProducts.getProducts();
+                    }
+                    return false;
+                });
+
+                $(CatalogProducts).on('before', function (e) {
+                    var $viewModeEl = $('[data-viewmode].selected');
+                    if ($viewModeEl) {
+                        e.payload.urlBuilder
+                            .addParameter('viewmode', $viewModeEl.data('viewmode'));
+                    }
+                });
+            });
+        </script>
+    }
+
+    @if (Model.AllowProductSorting)
+    {
+        <div class="product-sorting flex items-center gap-2">
+            <label for="products-orderby">@T("Catalog.OrderBy")</label>
+            @Html.DropDownList("products-orderby", Model.AvailableSortOptions, new { aria_label = T("Catalog.OrderBy.Label"), @class = selectCss })
+        </div>
+        <script asp-location="Footer">
+            $(function() {
+                var $orderByEl = $('#products-orderby');
+                $orderByEl.on('change', function () {
+                    CatalogProducts.getProducts();
+                });
+
+                $(CatalogProducts).on('before', function (e) {
+                    e.payload.urlBuilder
+                        .addParameter('orderby', $orderByEl.val());
+                });
+            });
+        </script>
+    }
+
+    @if (Model.AllowCustomersToSelectPageSize)
+    {
+        <div class="product-page-size flex items-center gap-2 sm:ml-auto">
+            <label for="products-pagesize">@T("Catalog.PageSize")</label>
+            @Html.DropDownList("products-pagesize", Model.PageSizeOptions, new { aria_label = T("Catalog.PageSize.Label"), @class = selectCss })
+            <span>@T("Catalog.PageSize.PerPage")</span>
+        </div>
+        <script asp-location="Footer">
+            $(function() {
+                var $pageSizeEl = $('#products-pagesize');
+                $pageSizeEl.on('change', function () {
+                    CatalogProducts.getProducts();
+                });
+
+                $(CatalogProducts).on('before', function (e) {
+                    e.payload.urlBuilder
+                        .addParameter('pagesize', $pageSizeEl.val());
+                });
+            });
+        </script>
+    }
+</div>

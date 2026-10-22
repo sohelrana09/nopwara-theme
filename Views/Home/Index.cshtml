@@ -1,0 +1,57 @@
+@using Nop.Services.Localization
+@using Nop.Core
+@inject ILocalizationService localizationService
+@inject IStoreContext storeContext
+
+@{
+    Layout = "_ColumnsOne";
+
+    var homepageTitle = await localizationService.GetLocalizedAsync(await storeContext.GetCurrentStoreAsync(), s => s.HomepageTitle);
+
+    //title
+    if (!string.IsNullOrEmpty(homepageTitle))
+    {
+        NopHtml.AddTitleParts(homepageTitle);
+    }
+
+    var homepageDescription = await localizationService.GetLocalizedAsync(await storeContext.GetCurrentStoreAsync(), s => s.HomepageDescription);
+
+    //meta
+    if (!string.IsNullOrEmpty(homepageDescription))
+    {
+        NopHtml.AddMetaDescriptionParts(homepageDescription);
+    }
+
+    //page class
+    NopHtml.AppendPageCssClassParts("html-home-page");
+}
+@*
+    Nopwara homepage. The "HomepageText" topic is rendered by the shared TopicBlock component
+    inside a hero wrapper (.home-hero, styled in tailwind/app.css), so the topic stays editable in admin.
+*@
+<div class="page home-page">
+    <div class="page-body space-y-14">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageTop })
+        <section class="home-hero relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 via-primary-600 to-sky-500 px-6 py-12 text-white sm:px-10 sm:py-16 lg:px-16 lg:py-20">
+            <div aria-hidden="true" class="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-white/10"></div>
+            <div aria-hidden="true" class="pointer-events-none absolute -bottom-32 right-24 size-72 rounded-full bg-white/5"></div>
+            <div class="relative max-w-2xl">
+                @await Component.InvokeAsync(typeof(TopicBlockViewComponent), new { systemName = "HomepageText" })
+                <a href="#home-featured" class="mt-8 inline-flex items-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-semibold text-primary-700 shadow-sm transition hover:bg-primary-50 hover:text-primary-700">
+                    @T("Homepage.Products")
+                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>
+                </a>
+            </div>
+        </section>
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBeforeCategories })
+        @await Component.InvokeAsync(typeof(HomepageCategoriesViewComponent))
+        @await Component.InvokeAsync(typeof(FilterLevelValueSearchViewComponent))
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBeforeProducts })
+        <div id="home-featured" class="scroll-mt-6">
+            @await Component.InvokeAsync(typeof(HomepageProductsViewComponent))
+        </div>
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBeforeBestSellers })
+        @await Component.InvokeAsync(typeof(HomepageBestSellersViewComponent))
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBottom })
+    </div>
+</div>

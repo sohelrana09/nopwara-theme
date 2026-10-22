@@ -1,0 +1,16 @@
+@{
+    Layout = "_Root";
+}
+
+@if (IsSectionDefined("Breadcrumb"))
+{
+    <div class="site-container pt-4">
+        @await RenderSectionAsync("Breadcrumb", false)
+    </div>
+}
+
+<section class="center-1 site-container py-6">
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.MainColumnBefore })
+    @RenderBody()
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.MainColumnAfter })
+</section>

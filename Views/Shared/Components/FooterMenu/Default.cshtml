@@ -1,0 +1,29 @@
+@model List<MenuModel>
+
+@*Nopwara footer menus (replaces public.menu.js): columns on lg+, Alpine accordions below lg*@
+<nav class="footer-navigation grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-8">
+    @foreach (var menu in Model)
+    {
+        <div class="footer-menu @menu.CssClass group border-b border-slate-800 lg:border-0"
+             x-data="{ open: false }"
+             :data-open="open">
+            <h2 id="footer-menu-@menu.Id" class="footer-menu__title">
+                <button type="button"
+                        class="flex w-full items-center justify-between py-4 text-left text-sm font-semibold uppercase tracking-wide text-white lg:pointer-events-none lg:py-0 lg:pb-4"
+                        @@click="open = !open"
+                        :aria-expanded="open"
+                        aria-controls="footer-menu-list-@menu.Id">
+                    @menu.Name
+                    <svg class="size-4 transition-transform group-data-open:rotate-180 lg:hidden" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                </button>
+            </h2>
+
+            <ul id="footer-menu-list-@menu.Id" class="footer-menu__list hidden space-y-2 pb-4 group-data-open:block lg:block lg:pb-0" role="menu" aria-labelledby="footer-menu-@menu.Id">
+                @foreach (var menuItem in menu.Items)
+                {
+                    @await Html.PartialAsync("_FooterItem.cshtml", menuItem)
+                }
+            </ul>
+        </div>
+    }
+</nav>

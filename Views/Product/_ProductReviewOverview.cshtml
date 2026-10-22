@@ -1,0 +1,41 @@
+@model ProductReviewOverviewModel
+@*Nopwara: review links open the "reviews" tab of ProductTemplate.Simple (nopwara:tab event) and scroll to the core anchors*@
+@{
+    var ratingPercent = 0;
+    var noReviews = Model.TotalReviews == 0;
+    if (!noReviews)
+    {
+        ratingPercent = ((Model.RatingSum * 100) / Model.TotalReviews) / 5;
+    }
+}
+@if (Model.AllowCustomerReviews)
+{
+    <div class="product-reviews-overview flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+        <div class="product-review-box">
+            <div class="rating relative inline-block text-lg leading-none tracking-wider text-slate-300" aria-hidden="true">
+                ★★★★★
+                <div class="absolute inset-y-0 left-0 overflow-hidden whitespace-nowrap text-amber-400" style="width: @(ratingPercent)%">★★★★★</div>
+            </div>
+        </div>
+
+        @if (Model.TotalReviews > 0)
+        {
+            <div class="product-review-links">
+                <a href="#productreviews" class="text-slate-600 underline-offset-2 hover:underline"
+                   @@click.prevent="$dispatch('nopwara:tab', { tab: 'reviews', target: 'productreviews' })">
+                    @Model.TotalReviews @T("Reviews.Overview.Reviews")
+                </a>
+            </div>
+        }
+
+        @if (Model.CanAddNewReview && Model.CanCurrentCustomerLeaveReview)
+        {
+            <div class="product-review-links add-review @(noReviews ? "product-no-reviews" : "")">
+                <a href="#addreview" class="font-medium underline-offset-2 hover:underline"
+                   @@click.prevent="$dispatch('nopwara:tab', { tab: 'reviews', target: 'addreview' })">
+                    @T(noReviews ? "Reviews.Overview.First" : "Reviews.Overview.AddNew")
+                </a>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,140 @@
+@model CategoryModel
+
+@using Nop.Core.Domain.Catalog
+@using Nop.Core.Domain.Common
+@using Nop.Core.Domain.Seo
+@using Nop.Services.Helpers
+
+@inject IWebHelper webHelper
+@inject SeoSettings seoSettings
+@inject CommonSettings commonSettings
+
+@{
+    Layout = "_ColumnsTwo";
+
+    //title
+    NopHtml.AddTitleParts(!string.IsNullOrEmpty(Model.MetaTitle) ? Model.MetaTitle : Model.Name);
+    //meta
+    NopHtml.AddMetaDescriptionParts(Model.MetaDescription);
+    NopHtml.AddMetaKeywordParts(Model.MetaKeywords);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-category-page");
+
+    if (seoSettings.CanonicalUrlsEnabled)
+    {
+        var categoryUrl = (await NopUrl.RouteGenericUrlAsync<Category>(new { SeName = Model.SeName }, webHelper.GetCurrentRequestProtocol())).ToLowerInvariant();
+        NopHtml.AddCanonicalUrlParts(categoryUrl, seoSettings.QueryStringInCanonicalUrlsEnabled);
+    }
+
+    var breadcrumbDelimiter = commonSettings.BreadcrumbDelimiter;
+    NopHtml.AddJsonLdParts(Model.JsonLd);
+}
+@*category breadcrumb*@
+@section Breadcrumb
+{
+    @if (Model.DisplayCategoryBreadcrumb)
+    {
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+                <li class="flex items-center gap-2">
+                    <a href="@Url.RouteUrl(NopRouteNames.General.HOMEPAGE)" title="@T("Categories.Breadcrumb.Top")" class="text-slate-500 hover:text-primary-600">@T("Categories.Breadcrumb.Top")</a>
+                    <span class="delimiter text-slate-300" aria-hidden="true">@breadcrumbDelimiter</span>
+                </li>
+                @foreach (var cat in Model.CategoryBreadcrumb)
+                {
+                    var isLastCategory = cat.Id == Model.Id;
+                    <li class="flex items-center gap-2">
+                        @if (isLastCategory)
+                        {
+                            <strong class="current-item font-medium text-slate-900" aria-current="page">@cat.Name</strong>
+                            <span id="@(await NopUrl.RouteGenericUrlAsync<Category>(new { SeName = cat.SeName }))"></span>
+                        }
+                        else
+                        {
+                            <a href="@(await NopUrl.RouteGenericUrlAsync<Category>(new { SeName = cat.SeName }))" title="@cat.Name" class="text-slate-500 hover:text-primary-600">
+                                <span>@cat.Name</span>
+                            </a>
+                            <span class="delimiter text-slate-300" aria-hidden="true">@breadcrumbDelimiter</span>
+                        }
+                    </li>
+                }
+            </ol>
+        </nav>
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CategoryDetailsAfterBreadcrumb, additionalData = Model })
+    }
+}
+
+@section CatalogFilters {
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CategoryDetailsBeforeFilters, additionalData = Model })
+    @await Html.PartialAsync("_CatalogFilters", Model.CatalogProductsModel)
+}
+
+<div class="page category-page space-y-8">
+    <div class="page-title">
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">@Model.Name</h1>
+    </div>
+    <div class="page-body space-y-8">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CategoryDetailsTop, additionalData = Model })
+        @*description*@
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <div class="category-description max-w-3xl space-y-3 text-sm leading-relaxed text-slate-600 [&_a]:underline">
+                @Html.Raw(Model.Description)
+            </div>
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CategoryDetailsBeforeSubcategories, additionalData = Model })
+        @*subcategories*@
+        @if (Model.SubCategories.Count > 0)
+        {
+            <div class="category-grid sub-category-grid">
+                <div class="item-grid grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+                    @foreach (var item in Model.SubCategories)
+                    {
+                        var subCategoryUrl = await NopUrl.RouteGenericUrlAsync<Category>(new { SeName = item.SeName });
+                        <div class="item-box">
+                            <a href="@subCategoryUrl" title="@item.PictureModel.Title"
+                               class="sub-category-item group/sub flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white transition-shadow hover:shadow-md">
+                                <div class="picture flex aspect-[4/3] items-center justify-center bg-slate-50 p-4">
+                                    <img alt="@item.PictureModel.AlternateText" src="@item.PictureModel.ImageUrl" title="@item.PictureModel.Title" loading="lazy"
+                                         class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover/sub:scale-105" />
+                                </div>
+                                <h2 class="title border-t border-slate-100 px-4 py-3 text-center text-sm font-semibold text-slate-900 group-hover/sub:text-primary-600">
+                                    @item.Name
+                                </h2>
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CategoryDetailsBeforeFeaturedProducts, additionalData = Model })
+        @*featured products*@
+        @if (Model.FeaturedProducts.Count > 0)
+        {
+            <div class="product-grid featured-product-grid space-y-4">
+                <h2 class="title text-lg font-semibold text-slate-900">
+                    @T("Products.FeaturedProducts")
+                </h2>
+                <div class="item-grid">
+                    @foreach (var item in Model.FeaturedProducts)
+                    {
+                        <div class="item-box">
+                            @await Html.PartialAsync("_ProductBox", item)
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CategoryDetailsAfterFeaturedProducts, additionalData = Model })
+        <div class="space-y-4">
+            @await Html.PartialAsync("_CatalogSelectors", Model.CatalogProductsModel)
+            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CategoryDetailsBeforeProductList, additionalData = Model })
+            @{
+                var catalogProductsViewData = new ViewDataDictionary(ViewData);
+                catalogProductsViewData["fetchUrl"] = Html.Raw(Url.RouteUrl(NopRouteNames.Ajax.GET_CATEGORY_PRODUCTS, new { categoryId = Model.Id }));
+            }
+            @await Html.PartialAsync("_CatalogProducts", Model.CatalogProductsModel, catalogProductsViewData)
+        </div>
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CategoryDetailsBottom, additionalData = Model })
+    </div>
+</div>

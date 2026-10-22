@@ -1,0 +1,117 @@
+@model ProductDetailsModel
+
+@using System.Text.Json
+
+@*
+    Nopwara gallery: Alpine component "nopwaraGallery" (Content/js/nopwara.js) replaces magnific-popup.
+    Keep #main-product-img-{id}, #main-product-img-lightbox-anchor-{id} and .thumb-item[data-pictureid]:
+    the core attribute-change handler in _ProductAttributes.cshtml updates them.
+*@
+@{
+    var has3d = Model.Product3dObjectModel?.Id > 0;
+    var galleryThumbsCount = Model.PictureModels.Count + (has3d ? 1 : 0);
+    var zoom = Model.DefaultPictureZoomEnabled;
+    var dataId = $"nopwara-gallery-data-{Model.Id}";
+    var pictures = Model.PictureModels.Select(p => new
+    {
+        id = p.Id,
+        image = p.ImageUrl,
+        full = p.FullSizeImageUrl,
+        title = p.Title,
+        alt = p.AlternateText
+    });
+    const string navButtonCss = "absolute top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20";
+}
+
+<script type="application/json" id="@dataId">@Html.Raw(JsonSerializer.Serialize(pictures))</script>
+
+<div class="picture-gallery space-y-3"
+     x-data="nopwaraGallery('@dataId', @zoom.ToString().ToLowerInvariant())"
+     @@keydown.escape.window="lightbox = false"
+     @@keydown.arrow-left.window="lightbox && step(-1)"
+     @@keydown.arrow-right.window="lightbox && step(1)">
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsBeforePictures, additionalData = Model })
+
+    <div class="picture relative flex aspect-square items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white p-6">
+        @if (zoom)
+        {
+            <a href="@Model.DefaultPictureModel.FullSizeImageUrl" title="@Model.DefaultPictureModel.Title"
+               id="main-product-img-lightbox-anchor-@Model.Id" x-ref="anchor"
+               x-show="!show3d"
+               @@click.prevent="openLightbox()"
+               class="group/zoom flex size-full cursor-zoom-in items-center justify-center">
+                <img alt="@Model.DefaultPictureModel.AlternateText" src="@Model.DefaultPictureModel.ImageUrl" title="@Model.DefaultPictureModel.Title"
+                     id="main-product-img-@Model.Id" x-ref="main" class="max-h-full max-w-full object-contain" />
+                <span class="absolute bottom-3 right-3 rounded-full bg-white/90 p-2 text-slate-600 opacity-0 shadow transition group-hover/zoom:opacity-100" aria-hidden="true">
+                    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607ZM10.5 7.5v6m3-3h-6" /></svg>
+                </span>
+            </a>
+        }
+        else
+        {
+            <img alt="@Model.DefaultPictureModel.AlternateText" src="@Model.DefaultPictureModel.ImageUrl" title="@Model.DefaultPictureModel.Title"
+                 id="main-product-img-@Model.Id" x-ref="main" x-show="!show3d" class="max-h-full max-w-full object-contain" />
+        }
+
+        @if (has3d)
+        {
+            @*core shows the 3D viewer next to the picture when it is the only thumb; otherwise it is toggled from the thumbs*@
+            <div class="size-full [&_model-viewer]:size-full" @(galleryThumbsCount > 1 ? Html.Raw("x-show=\"show3d\" x-cloak") : Html.Raw(""))>
+                @await Html.PartialAsync("_ProductDetails3dObject", Model.Product3dObjectModel)
+            </div>
+        }
+    </div>
+
+    @if (galleryThumbsCount > 1)
+    {
+        <div class="picture-thumbs flex gap-2 overflow-x-auto pb-1">
+            @for (var i = 0; i < Model.PictureModels.Count; i++)
+            {
+                var picture = Model.PictureModels[i];
+                <button type="button" class="thumb-item size-16 shrink-0 overflow-hidden rounded-md border-2 bg-white p-1 sm:size-20"
+                        data-pictureid="@picture.Id"
+                        :class="!show3d && active === @i ? 'border-primary-600' : 'border-slate-200 hover:border-slate-300'"
+                        @@click="select(@i)"
+                        title="@picture.Title">
+                    <img src="@picture.ThumbImageUrl" alt="@picture.AlternateText" class="size-full object-contain" loading="lazy" />
+                </button>
+            }
+            @if (has3d)
+            {
+                <button type="button" class="thumb-item size-16 shrink-0 overflow-hidden rounded-md border-2 bg-white p-1 sm:size-20"
+                        :class="show3d ? 'border-primary-600' : 'border-slate-200 hover:border-slate-300'"
+                        @@click="select3d()">
+                    <img src="@Model.Product3dObjectModel.ThumbImageUrl" alt="@Model.Product3dObjectModel.AlternateText" class="size-full object-contain" />
+                </button>
+            }
+        </div>
+    }
+
+    @if (zoom)
+    {
+        <div x-show="lightbox" x-cloak x-transition.opacity
+             class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 p-4"
+             @@click.self="lightbox = false"
+             role="dialog" aria-modal="true">
+            <img :src="lightboxSrc" alt="@Model.DefaultPictureModel.AlternateText" class="max-h-[90vh] max-w-full rounded object-contain" />
+            <button type="button" class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20" @@click="lightbox = false" title="@T("Media.MagnificPopup.Close")">
+                <span class="sr-only">@T("Media.MagnificPopup.Close")</span>
+                <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+            @if (Model.PictureModels.Count > 1)
+            {
+                <button type="button" class="@navButtonCss left-4" @@click="step(-1)" title="@T("Media.MagnificPopup.Previous")">
+                    <span class="sr-only">@T("Media.MagnificPopup.Previous")</span>
+                    <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                </button>
+                <button type="button" class="@navButtonCss right-4" @@click="step(1)" title="@T("Media.MagnificPopup.Next")">
+                    <span class="sr-only">@T("Media.MagnificPopup.Next")</span>
+                    <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                </button>
+                <p class="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-white/70" x-text="(lightboxIndex + 1) + ' / ' + pictures.length"></p>
+            }
+        </div>
+    }
+
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsAfterPictures, additionalData = Model })
+</div>

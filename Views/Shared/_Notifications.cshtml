@@ -1,0 +1,113 @@
+@using Newtonsoft.Json
+@using Nop.Core.Domain.Messages
+@using Nop.Services.Messages
+@inject MessagesSettings messagesSettings
+@{
+    var successMessages = new List<string>();
+    var errorMessages = new List<string>();
+    var warningMessages = new List<string>();
+
+    //Get messages from TempData
+    var notes = TempData.ContainsKey(NopMessageDefaults.NotificationListKey)
+        ? JsonConvert.DeserializeObject<IList<NotifyData>>(TempData[NopMessageDefaults.NotificationListKey].ToString())
+        : null;
+
+    if (notes != null)
+    {
+        foreach (var note in notes)
+        {
+            switch (note.Type)
+            {
+                case NotifyType.Success:
+                    successMessages.Add(note.Message);
+                    break;
+                case NotifyType.Error:
+                    errorMessages.Add(note.Message);
+                    break;
+                case NotifyType.Warning:
+                    warningMessages.Add(note.Message);
+                    break;
+
+            }
+        }
+    }
+}
+@if (successMessages.Any() || warningMessages.Any() || errorMessages.Any())
+{
+    if (messagesSettings.UsePopupNotifications)
+    {
+        <script asp-location="Footer">
+            $(function() {
+                var notes = {
+                    'success': [
+                        @Html.Raw(string.Join(", ", successMessages.Select(x => $" '{JavaScriptEncoder.Default.Encode(x)}' ")))],
+                    'warning': [
+                        @Html.Raw(string.Join(", ", warningMessages.Select(x => $" '{JavaScriptEncoder.Default.Encode(x)}' ")))],
+                    'error': [
+                        @Html.Raw(string.Join(", ", errorMessages.Select(x => $" '{JavaScriptEncoder.Default.Encode(x)}' ")))]
+                };
+
+                displayJoinedPopupNotifications(notes);
+            });
+        </script>
+    }
+    else
+    {
+        <script asp-location="Footer">
+            $(function() {
+                var successMsg = [ @Html.Raw(string.Join(", ", successMessages.Select(x => $" '{JavaScriptEncoder.Default.Encode(x)}' "))) ];
+                displayBarNotification(successMsg, 'success', false);
+
+                var errorMsg = [ @Html.Raw(string.Join(", ", errorMessages.Select(x => $" '{JavaScriptEncoder.Default.Encode(x)}' "))) ];
+                displayBarNotification(errorMsg, 'error', false);
+
+                var warningMsg = [ @Html.Raw(string.Join(", ", warningMessages.Select(x => $" '{JavaScriptEncoder.Default.Encode(x)}' "))) ];
+                displayBarNotification(warningMsg, 'warning', false);
+            });
+        </script>
+    }
+}
+
+<div class="ajax-loading-block-window" style="display: none">
+</div>
+<div id="dialog-notifications-success" role="status" aria-live="polite" aria-atomic="true" title="@T("Common.Notification")" style="display:none;">
+</div>
+<div id="dialog-notifications-error" role="alert" aria-live="assertive" aria-atomic="true" title="@T("Common.Error")" style="display:none;">
+</div>
+<div id="dialog-notifications-warning" role="alert" aria-live="assertive" aria-atomic="true" title="@T("Common.Warning")" style="display:none;">
+</div>
+@*kept for compatibility with code that looks it up; Nopwara renders bar notifications in the toast region below*@
+<div id="bar-notification" class="bar-notification-container hidden" data-close="@T("Common.Close")">
+</div>
+
+@*
+    Nopwara toast region. Content/js/nopwara.js replaces core displayBarNotification()
+    and dispatches "nopwara:notify" events, so every existing caller (ajax cart, wishlist, server messages) lands here.
+*@
+<div x-data="nopwaraToasts"
+     @@nopwara:notify.window="add($event.detail)"
+     class="pointer-events-none fixed inset-x-0 top-4 z-[90] flex flex-col items-center gap-2 px-4 sm:left-auto sm:right-4 sm:items-end sm:px-0"
+     role="status" aria-live="polite">
+    <template x-for="toast in toasts" :key="toast.id">
+        <div class="bar-notification pointer-events-auto flex w-full max-w-sm animate-[nopwara-toast-in_0.2s_ease-out] items-start gap-3 rounded-lg border p-4 text-sm shadow-lg"
+             :class="{
+                 'success border-emerald-200 bg-emerald-50 text-emerald-900': toast.type === 'success',
+                 'error border-red-200 bg-red-50 text-red-900': toast.type === 'error',
+                 'warning border-amber-200 bg-amber-50 text-amber-900': toast.type === 'warning'
+             }"
+             @@mouseenter="pause(toast)">
+            <svg x-show="toast.type === 'success'" class="size-5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            <svg x-show="toast.type !== 'success'" class="size-5 shrink-0" :class="toast.type === 'error' ? 'text-red-600' : 'text-amber-600'" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+            <div class="content min-w-0 flex-1 space-y-1 [&_a]:font-semibold [&_a]:underline">
+                <template x-for="message in toast.messages">
+                    <p x-html="message"></p>
+                </template>
+            </div>
+            <button type="button" class="close -m-1 rounded p-1 opacity-60 hover:opacity-100" @@click="remove(toast.id)">
+                <span class="sr-only">@T("Common.Close")</span>
+                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+    </template>
+</div>
+@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.Notifications })

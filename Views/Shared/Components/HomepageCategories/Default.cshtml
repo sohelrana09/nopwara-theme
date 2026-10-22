@@ -1,0 +1,29 @@
+@model IList<CategoryModel>
+
+@using Nop.Core.Domain.Catalog
+
+@*Nopwara homepage categories: image cards with the name on a gradient overlay*@
+@if (Model.Count > 0)
+{
+    <section class="category-grid home-page-category-grid space-y-5">
+        <h2 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">@T("Categories")</h2>
+        <div class="item-grid grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+            @foreach (var item in Model)
+            {
+                var categoryUrl = await NopUrl.RouteGenericUrlAsync<Category>(new { SeName = item.SeName });
+                <article class="item-box">
+                    <a href="@categoryUrl" title="@item.PictureModel.Title"
+                       class="group/cat relative block aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+                        <img alt="@item.PictureModel.AlternateText" src="@item.PictureModel.ImageUrl" title="@item.PictureModel.Title" loading="lazy"
+                             class="size-full object-cover transition-transform duration-500 group-hover/cat:scale-105" />
+                        <span aria-hidden="true" class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent"></span>
+                        <h2 class="title absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 p-4 text-base font-semibold text-white sm:text-lg">
+                            <span class="truncate">@item.Name</span>
+                            <svg class="size-5 shrink-0 transition-transform group-hover/cat:translate-x-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                        </h2>
+                    </a>
+                </article>
+            }
+        </div>
+    </section>
+}

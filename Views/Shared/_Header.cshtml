@@ -1,0 +1,72 @@
+@*
+    Nopwara header. One Alpine scope (mobileOpen) drives the mobile drawer.
+    The main menu is rendered once: horizontal bar on lg+, off-canvas drawer below lg.
+*@
+<header class="header relative z-40 bg-white shadow-sm"
+        x-data="{ mobileOpen: false }"
+        x-effect="document.body.classList.toggle('overflow-hidden', mobileOpen)"
+        @@keydown.escape.window="mobileOpen = false">
+    <a class="skip sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:shadow" href="#main">@T("Header.SkipNavigation.Text")</a>
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderBefore })
+
+    @*top bar: tax / currency / language selectors*@
+    <div class="header-upper hidden border-b border-slate-200 bg-slate-50 text-xs text-slate-600 has-[select,a,input,button]:block">
+        <div class="site-container header-selectors-wrapper flex min-h-9 flex-wrap items-center justify-end gap-3 py-1 [&_select]:rounded [&_select]:border [&_select]:border-slate-300 [&_select]:bg-white [&_select]:px-2 [&_select]:py-0.5">
+            @await Component.InvokeAsync(typeof(TaxTypeSelectorViewComponent))
+            @await Component.InvokeAsync(typeof(CurrencySelectorViewComponent))
+            @await Component.InvokeAsync(typeof(LanguageSelectorViewComponent))
+            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderSelectors })
+        </div>
+    </div>
+
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderMiddle })
+
+    @*main bar: menu toggle, logo, search, account links + cart*@
+    <div class="header-lower site-container flex flex-wrap items-center gap-x-2 gap-y-3 py-3 sm:gap-x-4 lg:flex-nowrap lg:py-4">
+        <button type="button"
+                class="-ml-2 rounded-md p-2 text-slate-700 hover:bg-slate-100 lg:hidden"
+                @@click="mobileOpen = true"
+                :aria-expanded="mobileOpen"
+                aria-controls="nopwara-nav">
+            <span class="sr-only">@T("Menu")</span>
+            <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+        </button>
+
+        <div class="header-logo shrink-0">
+            @await Component.InvokeAsync(typeof(LogoViewComponent))
+        </div>
+
+        <div role="search" class="search-box store-search-box relative order-last w-full lg:order-none lg:mx-6 lg:w-auto lg:flex-1">
+            @await Component.InvokeAsync(typeof(SearchBoxViewComponent))
+        </div>
+
+        <div class="header-links-wrapper ml-auto lg:ml-0">
+            @*the flyout cart is rendered inside HeaderLinks, next to the cart link*@
+            @await Component.InvokeAsync(typeof(HeaderLinksViewComponent))
+        </div>
+    </div>
+
+    @*mobile backdrop*@
+    <div x-show="mobileOpen" x-transition.opacity x-cloak
+         class="fixed inset-0 z-40 bg-slate-900/40 lg:hidden"
+         @@click="mobileOpen = false"></div>
+
+    @*main menu: drawer below lg, bar on lg+*@
+    <nav id="nopwara-nav"
+         :data-open="mobileOpen"
+         aria-label="@T("Menu")"
+         class="header-menu fixed inset-y-0 left-0 z-50 w-80 max-w-[85%] overflow-y-auto bg-white shadow-xl transition-transform duration-200 max-lg:-translate-x-full max-lg:data-open:translate-x-0 lg:static lg:z-auto lg:w-auto lg:max-w-none lg:overflow-visible lg:border-t lg:border-slate-200 lg:shadow-none lg:transition-none">
+        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 lg:hidden">
+            <span class="text-base font-semibold">@T("Menu")</span>
+            <button type="button" class="rounded-md p-2 text-slate-500 hover:bg-slate-100" @@click="mobileOpen = false">
+                <span class="sr-only">@T("Common.Close")</span>
+                <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <div class="site-container relative">
+            @await Component.InvokeAsync(typeof(MainMenuViewComponent))
+        </div>
+    </nav>
+
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderAfter })
+</header>

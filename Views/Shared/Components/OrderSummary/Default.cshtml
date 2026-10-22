@@ -1,0 +1,214 @@
+@model ShoppingCartModel
+
+@using Nop.Core
+@using Nop.Core.Domain.Orders
+@using Nop.Core.Domain.Tax
+
+@inject IWorkContext workContext
+@inject OrderSettings orderSettings
+
+@*
+    Nopwara order summary (cart page and the read-only checkout confirm step).
+    Two columns on lg: items + options/deals on the left, a sticky totals card on the right.
+    The cart is a classic form post: ids/names (#shopping-cart-form, #updatecart, #checkout, #termsofservice,
+    itemquantity*, removefromcart) and the jQuery scripts are unchanged from core.
+*@
+<div class="order-summary-content">
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OrderSummaryContentBefore, additionalData = Model })
+    @await Html.PartialAsync("_OrderReviewData", Model.OrderReviewData)
+    @if (Model.Items.Count > 0)
+    {
+        if (Model.Warnings.Count > 0)
+        {
+            <div class="message-error mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <ul class="list-disc space-y-1 pl-5">
+                    @foreach (var warning in Model.Warnings)
+                    {
+                        <li>@warning</li>
+                    }
+                </ul>
+            </div>
+        }
+        @*we add enctype = "multipart/form-data" because "File upload" attribute control type requires it*@
+        <form asp-route="@NopRouteNames.General.CART" method="post" enctype="multipart/form-data" id="shopping-cart-form"
+              class="grid gap-8 @(Model.IsEditable ? "lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start" : "")">
+            <div class="min-w-0 space-y-6">
+                @if (Model.IsEditable && Model.DisplayVendorList)
+                {
+                    <div class="sc-vendor flex items-center gap-3 text-sm">
+                        <label asp-for="SelectedVendorId" class="sc-vendor-label font-medium text-slate-700">
+                            @T("ShoppingCart.VendorList")
+                        </label>
+                        <select asp-for="SelectedVendorId" asp-items="Model.AvailableVendors" class="rounded-md border border-slate-300 px-3 py-1.5"></select>
+                    </div>
+                    <script asp-location="Footer">
+                        $(function() {
+                            $('#@Html.IdFor(m => m.SelectedVendorId)').on('change', function() {
+
+                                $('<input>', {
+                                    type: 'hidden',
+                                    name: 'changevendorcart',
+                                    value: '1'
+                                }).appendTo('#shopping-cart-form');
+
+                                $('#shopping-cart-form').trigger('submit');
+                            });
+                        })
+                    </script>
+                }
+
+                @await Html.PartialAsync("_ShoppingCartItems", Model)
+
+                @if (Model.IsEditable && Model.Items.Count > 0 && Model.DisplayTaxShippingInfo)
+                {
+                    var inclTax = await workContext.GetTaxDisplayTypeAsync() == TaxDisplayType.IncludingTax;
+                    //tax info is already included in the price (incl/excl tax). that's why we display only shipping info here
+                    <div class="tax-shipping-info text-xs text-slate-500 [&_a]:underline">
+                        @T(inclTax ? "ShoppingCart.TaxShipping.InclTax" : "ShoppingCart.TaxShipping.ExclTax", await NopUrl.RouteTopicUrlAsync("shippinginfo"))
+                    </div>
+                }
+                <div class="cart-options space-y-6">
+                    <div class="common-buttons flex flex-wrap items-center gap-3">
+                        @if (Model.IsEditable)
+                        {
+                            <button type="submit" name="updatecart" id="updatecart" class="button-2 update-cart-button" style="display: none;">@T("ShoppingCart.UpdateCart")</button>
+                            <button type="submit" name="continueshopping" class="button-2 continue-shopping-button btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
+                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+                                @T("ShoppingCart.ContinueShopping")
+                            </button>
+                            @await Component.InvokeAsync(typeof(ShoppingCartEstimateShippingViewComponent))
+                        }
+                    </div>
+
+                    @if (Model.IsEditable || Model.IsReadyToCheckout)
+                    {
+                        @await Html.PartialAsync("_CheckoutAttributes", Model)
+                        @await Component.InvokeAsync(typeof(SelectedCheckoutAttributesViewComponent))
+                    }
+                </div>
+                @if (Model.IsEditable)
+                {
+                    <div class="cart-collaterals">
+                        <div class="deals grid gap-4 sm:grid-cols-2">
+                            @await Html.PartialAsync("_DiscountBox", Model.DiscountBox)
+                            @await Html.PartialAsync("_GiftCardBox", Model.GiftCardBox)
+                            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OrderSummaryContentDeals, additionalData = Model })
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <aside class="cart-footer space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-5 lg:sticky lg:top-4">
+                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OrderSummaryCartFooter, additionalData = Model })
+                <div class="totals space-y-4">
+                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OrderSummaryTotals, additionalData = Model })
+                    @await Component.InvokeAsync(typeof(OrderTotalsViewComponent), new { isEditable = Model.IsEditable })
+                    @if (Model.IsEditable)
+                    {
+                        if (!string.IsNullOrEmpty(Model.MinOrderSubtotalWarning))
+                        {
+                            <div class="min-amount-warning rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                                @Model.MinOrderSubtotalWarning
+                            </div>
+                        }
+                    }
+                    @if (Model.IsEditable || Model.IsReadyToCheckout)
+                    {
+                        if (Model.TermsOfServiceOnShoppingCartPage)
+                        {
+                            <div id="terms-of-service-warning-box" title="@T("Checkout.TermsOfService")" style="display: none;">
+                                <p>@T("Checkout.TermsOfService.PleaseAccept")</p>
+                            </div>
+                            <div class="terms-of-service grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-1 text-sm text-slate-700">
+                                <input id="termsofservice" type="checkbox" name="termsofservice" class="mt-0.5 size-4 accent-primary-600" />
+                                <label for="termsofservice">@T("Checkout.TermsOfService.IAccept")</label>
+                                @if (Model.TermsOfServicePopup)
+                                {
+                                    <a class="read col-start-2 cursor-pointer font-medium" id="read-terms" role="button" tabindex="0">@T("Checkout.TermsOfService.Read")</a>
+                                    <script asp-location="Footer">
+                                        $(function() {
+                                            $('#read-terms').on('click keyup', function(e) {
+                                                e.preventDefault();
+
+                                                if (e.type == 'click' || (e.type == 'keydown' && e.key === 'Enter'))
+                                                {
+                                                    $(this).trigger("blur");
+                                                    displayPopupContentFromUrl(
+                                                        '@Url.RouteUrl(NopRouteNames.Ajax.TOPIC_POPUP, new { SystemName = "conditionsofuse" })',
+                                                        '@T("Checkout.TermsOfService")');
+                                                }
+                                            });
+                                        });
+                                    </script>
+                                }
+                                else
+                                {
+                                    <a class="read col-start-2 font-medium" id="read-terms" href="@await NopUrl.RouteTopicUrlAsync("conditionsofuse")" role="button" tabindex="0">@T("Checkout.TermsOfService.Read")</a>
+                                }
+                            </div>
+                        }
+                        <div class="checkout-buttons">
+                            @if (string.IsNullOrEmpty(Model.MinOrderSubtotalWarning) && !Model.HideCheckoutButton)
+                            {
+                                <script asp-location="Footer">
+                                    $(function() {
+                                        $('#checkout').on('click', function () {
+                                            //terms of service
+                                            var termOfServiceOk = true;
+                                            if ($('#termsofservice').length > 0) {
+                                                //terms of service element exists
+                                                if (!$('#termsofservice').is(':checked')) {
+                                                    $("#terms-of-service-warning-box").dialog();
+                                                    termOfServiceOk = false;
+                                                } else {
+                                                    termOfServiceOk = true;
+                                                }
+                                            }
+                                            return termOfServiceOk;
+                                        });
+                                    });
+                                </script>
+                                if (orderSettings.CheckoutDisabled)
+                                {
+                                    <div class="checkout-disabled rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                                        @T("Checkout.Disabled")
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button type="submit" id="checkout" name="checkout" value="checkout" class="button-1 checkout-button btn btn-primary w-full py-3 text-base">
+                                        @T("Checkout.Button")
+                                        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                                    </button>
+                                }
+                            }
+                        </div>
+                        <div class="addon-buttons space-y-2 empty:hidden">
+                            @*Payment method buttons (e.g. GoogleCheckoutButton, Paypal Express)*@
+                            @foreach (var pm in Model.ButtonPaymentMethodViewComponents)
+                            {
+                                @await Component.InvokeAsync(pm)
+                            }
+                        </div>
+                    }
+                </div>
+            </aside>
+
+            @if (Model.IsEditable)
+            {
+                <div class="lg:col-span-2">
+                    @await Component.InvokeAsync(typeof(CrossSellProductsViewComponent))
+                </div>
+            }
+        </form>
+    }
+    else
+    {
+        <div class="no-data flex flex-col items-center gap-4 rounded-lg border border-dashed border-slate-300 px-6 py-16 text-center">
+            <svg class="size-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke-width="1.2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007Z" /></svg>
+            <p class="text-slate-600">@T("ShoppingCart.CartIsEmpty")</p>
+            <a href="@Url.RouteUrl(NopRouteNames.General.HOMEPAGE)" class="btn btn-primary">@T("ShoppingCart.ContinueShopping")</a>
+        </div>
+    }
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OrderSummaryContentAfter, additionalData = Model })
+</div>

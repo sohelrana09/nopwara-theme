@@ -1,0 +1,40 @@
+@model ProductDetailsModel.ProductBreadcrumbModel
+
+@using Nop.Core.Domain.Catalog
+@using Nop.Core.Domain.Common
+
+@inject CommonSettings commonSettings
+
+@{
+    var breadcrumbDelimiter = commonSettings.BreadcrumbDelimiter;
+
+    NopHtml.AddJsonLdParts(Model.JsonLd);
+}
+@if (Model.Enabled)
+{
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductBreadcrumbBefore, additionalData = Model })
+            <li class="flex items-center gap-2">
+                <a href="@Url.RouteUrl(NopRouteNames.General.HOMEPAGE)" class="text-slate-500 hover:text-primary-600">
+                    <span>@T("Products.Breadcrumb.Top")</span>
+                </a>
+                <span class="delimiter text-slate-300" aria-hidden="true">@breadcrumbDelimiter</span>
+            </li>
+            @foreach (var category in Model.CategoryBreadcrumb)
+            {
+                <li class="flex items-center gap-2">
+                    <a href="@(await NopUrl.RouteGenericUrlAsync<Category>(new { SeName = category.SeName }))" class="text-slate-500 hover:text-primary-600">
+                        <span>@category.Name</span>
+                    </a>
+                    <span class="delimiter text-slate-300" aria-hidden="true">@breadcrumbDelimiter</span>
+                </li>
+            }
+            <li class="flex min-w-0 items-center gap-2">
+                <strong class="current-item truncate font-medium text-slate-900" aria-current="page">@Model.ProductName</strong>
+                <span id="@(await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = Model.ProductSeName }))"></span>
+                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductBreadcrumbAfter, additionalData = Model })
+            </li>
+        </ol>
+    </nav>
+}

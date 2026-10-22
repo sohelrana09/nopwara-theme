@@ -1,0 +1,74 @@
+@model MiniShoppingCartModel
+
+@using Nop.Core.Domain.Catalog
+
+@*
+    Nopwara flyout cart. Rendered inside #topcartlink (HeaderLinks), whose Alpine scope provides "open".
+    public.ajaxcart.js replaces #flyout-cart with this view's HTML after add-to-cart, so keep the id.
+    Only shown on lg+; on smaller screens the cart link goes straight to the cart page.
+*@
+<div id="flyout-cart"
+     class="flyout-cart absolute right-0 top-full z-50 hidden w-96 pt-2 lg:block"
+     x-show="open" x-transition.origin.top.right x-cloak>
+    <div class="mini-shopping-cart rounded-lg border border-slate-200 bg-white p-4 text-sm shadow-xl">
+        <div class="count text-slate-600 [&_a]:font-semibold">
+            @if (Model.TotalProducts == 0)
+            {
+                @T("ShoppingCart.Mini.NoItems")
+            }
+            else
+            {
+                @Html.Raw(string.Format(T("ShoppingCart.Mini.ItemsText").Text, $"<a href=\"{Url.RouteUrl(NopRouteNames.General.CART)}\">{string.Format(T("ShoppingCart.Mini.Items").Text, Model.TotalProducts)}</a>"))
+            }
+        </div>
+        @if (Model.TotalProducts > 0)
+        {
+            @*Nopwara widget zone above the items (e.g. the Nopwara free-shipping progress bar)*@
+            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = "nopwara_flyoutcart_top", additionalData = Model })
+            <ul class="items mt-3 max-h-80 divide-y divide-slate-100 overflow-y-auto">
+                @for (var i = 0; i < Model.Items.Count; i++)
+                {
+                    var item = Model.Items[i];
+                    var productUrl = await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = item.ProductSeName });
+                    <li class="item flex gap-3 py-3 @(i == 0 ? "first" : null)">
+                        @if (Model.ShowProductImages)
+                        {
+                            <a href="@productUrl" title="@item.Picture.Title" class="picture shrink-0">
+                                <img alt="@item.Picture.AlternateText" src="@item.Picture.ImageUrl" title="@item.Picture.Title" class="size-16 rounded border border-slate-100 object-contain" />
+                            </a>
+                        }
+                        <div class="product min-w-0 flex-1 space-y-0.5">
+                            <a href="@productUrl" class="name block truncate font-medium text-slate-900">@item.ProductName</a>
+                            @if (!string.IsNullOrEmpty(item.AttributeInfo))
+                            {
+                                <div class="attributes text-xs text-slate-500">@Html.Raw(item.AttributeInfo)</div>
+                            }
+                            <div class="price text-slate-600">@T("ShoppingCart.Mini.UnitPrice"): <span class="font-medium text-slate-900">@item.UnitPrice</span></div>
+                            <div class="quantity text-slate-600">@T("ShoppingCart.Mini.Quantity"): <span class="font-medium text-slate-900">@item.Quantity</span></div>
+                        </div>
+                    </li>
+                }
+            </ul>
+            <div class="totals mt-3 flex justify-between border-t border-slate-200 pt-3">
+                <span>@T("ShoppingCart.Totals.SubTotal")</span>
+                <strong>@Model.SubTotal</strong>
+            </div>
+            <div class="buttons mt-4 grid grid-cols-2 gap-2">
+                @if (Model.DisplayShoppingCartButton)
+                {
+                    <a href="@Url.RouteUrl(NopRouteNames.General.CART)" class="cart-button btn border border-slate-300 text-slate-700 hover:bg-slate-50">@T("ShoppingCart.Mini.ViewCart")</a>
+                }
+                @if (Model.DisplayCheckoutButton)
+                {
+                    //the Nopwara single-page checkout (Misc.NopwaraCheckout) has its own guest login, so guests go straight there;
+                    //it falls back to the core checkout when it's disabled
+                    var checkoutUrl = Url.RouteUrl("Plugin.Misc.NopwaraCheckout.Checkout")
+                        ?? (Model.AnonymousCheckoutAllowed && Model.CurrentCustomerIsGuest
+                            ? Url.RouteUrl(NopRouteNames.Standard.LOGIN_CHECKOUT_AS_GUEST, new { returnUrl = Url.RouteUrl(NopRouteNames.General.CART) })
+                            : Url.RouteUrl(NopRouteNames.Standard.CHECKOUT));
+                    <a href="@checkoutUrl" class="checkout-button btn btn-primary">@T("Checkout.Button")</a>
+                }
+            </div>
+        }
+    </div>
+</div>

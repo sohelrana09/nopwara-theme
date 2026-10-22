@@ -1,0 +1,36 @@
+@model PriceRangeFilterModel
+
+@*
+    Nopwara: two-handle price range built with native range inputs + Alpine (nopwaraPriceRange in nopwara-catalog.js),
+    replacing the jQuery UI slider. Adds the "price" parameter to CatalogProducts requests only when narrowed.
+*@
+@{
+    var min = Model.AvailablePriceRange.From ?? 0;
+    var max = Model.AvailablePriceRange.To ?? 0;
+    var from = Model.SelectedPriceRange.From ?? min;
+    var to = Model.SelectedPriceRange.To ?? max;
+}
+<div class="product-filter price-range-filter"
+     x-data="nopwaraPriceRange(@min.ToString(CultureInfo.InvariantCulture), @max.ToString(CultureInfo.InvariantCulture), @from.ToString(CultureInfo.InvariantCulture), @to.ToString(CultureInfo.InvariantCulture))"
+     data-price-filter>
+    <h2 class="filter-title">
+        @T("Filtering.PriceRangeFilter")
+    </h2>
+    <div class="filter-content space-y-4">
+        <div class="nopwara-range relative h-5" :style="trackStyle">
+            <input type="range" :min="min" :max="max" step="1" x-model.number="from" x-on:input="clampFrom()" x-on:change="apply()"
+                   aria-label="@T("Filtering.PriceRangeFilter").Text min" class="nopwara-range-input">
+            <input type="range" :min="min" :max="max" step="1" x-model.number="to" x-on:input="clampTo()" x-on:change="apply()"
+                   aria-label="@T("Filtering.PriceRangeFilter").Text max" class="nopwara-range-input">
+        </div>
+        <div class="flex items-center gap-2">
+            <input type="number" inputmode="numeric" :min="min" :max="max" x-model.number="from" x-on:change="clampFrom(); apply()"
+                   aria-label="@T("Filtering.PriceRangeFilter").Text min"
+                   class="w-full min-w-0 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
+            <span class="text-slate-400">–</span>
+            <input type="number" inputmode="numeric" :min="min" :max="max" x-model.number="to" x-on:change="clampTo(); apply()"
+                   aria-label="@T("Filtering.PriceRangeFilter").Text max"
+                   class="w-full min-w-0 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
+        </div>
+    </div>
+</div>

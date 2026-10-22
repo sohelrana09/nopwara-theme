@@ -1,0 +1,56 @@
+@model CheckoutProgressModel
+
+@*
+    Nopwara checkout progress. Same rules as core, expressed as one list:
+    a step is active when it is at or before the current step, and is a link when it is reachable
+    (at or before the current step) unless checkout is complete.
+*@
+@{
+    var current = Model.CheckoutProgressStep;
+    var steps = new (CheckoutProgressStep Step, string Title, string Url)[]
+    {
+        (CheckoutProgressStep.Cart, T("Checkout.Progress.Cart").Text, Url.RouteUrl(NopRouteNames.General.CART)),
+        (CheckoutProgressStep.Address, T("Checkout.Progress.Address").Text, Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_BILLING_ADDRESS)),
+        (CheckoutProgressStep.Shipping, T("Checkout.Progress.Shipping").Text, Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_SHIPPING_METHOD)),
+        (CheckoutProgressStep.Payment, T("Checkout.Progress.Payment").Text, Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_PAYMENT_METHOD)),
+        (CheckoutProgressStep.Confirm, T("Checkout.Progress.Confirm").Text, Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_CONFIRM)),
+        (CheckoutProgressStep.Complete, T("Checkout.Progress.Complete").Text, null)
+    };
+}
+<nav class="order-progress mb-8" aria-label="Checkout progress">
+    <ol class="flex items-center overflow-x-auto pb-1 text-xs font-medium sm:text-sm">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutProgressBefore, additionalData = Model })
+        @for (var i = 0; i < steps.Length; i++)
+        {
+            var (step, title, url) = steps[i];
+            var active = step <= current;
+            var isCurrent = step == current;
+            var linkable = url is not null && step <= current && current != CheckoutProgressStep.Complete;
+            var badgeCss = isCurrent
+                ? "bg-primary-600 text-white ring-4 ring-primary-100"
+                : active ? "bg-primary-600 text-white" : "border border-slate-300 bg-white text-slate-400";
+
+            <li class="@(active ? "active-step" : "inactive-step") flex shrink-0 items-center">
+                @if (i > 0)
+                {
+                    <span class="mx-2 h-px w-6 sm:w-10 @(active ? "bg-primary-600" : "bg-slate-300")" aria-hidden="true"></span>
+                }
+                <a href="@(linkable ? url : null)" @(isCurrent ? Html.Raw("aria-current=\"step\"") : null)
+                   class="flex items-center gap-2 @(active ? "text-slate-900" : "text-slate-400") @(linkable ? "hover:text-primary-700" : "pointer-events-none")">
+                    <span class="flex size-6 items-center justify-center rounded-full text-[0.7rem] font-semibold @badgeCss">
+                        @if (active && !isCurrent)
+                        {
+                            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                        }
+                        else
+                        {
+                            @(i + 1)
+                        }
+                    </span>
+                    <span class="@(isCurrent ? "" : "hidden sm:inline")">@title</span>
+                </a>
+            </li>
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutProgressAfter, additionalData = Model })
+    </ol>
+</nav>

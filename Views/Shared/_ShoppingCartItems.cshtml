@@ -1,0 +1,155 @@
+@model ShoppingCartModel
+
+@using Nop.Core.Domain.Catalog
+@using Nop.Core.Domain.Media
+@using Nop.Services.Helpers
+
+@inject IWebHelper webHelper
+@inject MediaSettings mediaSettings
+
+@*
+    Nopwara cart items: card rows instead of the core table (also used read-only on checkout confirm).
+    Field names are unchanged (itemquantity{id}, removefromcart); changes still post the cart form
+    through the hidden #updatecart button, exactly like core.
+*@
+<div class="table-wrapper rounded-lg border border-slate-200 bg-white" x-data="{ updating: false }" :class="updating && 'pointer-events-none opacity-60'">
+    <ul class="cart @@container divide-y divide-slate-100">
+        @foreach (var item in Model.Items)
+        {
+            var productUrl = await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = item.ProductSeName });
+            <li class="relative flex gap-4 p-4 sm:p-5">
+                @if (Model.ShowProductImages)
+                {
+                    <a href="@productUrl" class="product-picture shrink-0">
+                        <img alt="@item.Picture.AlternateText" src="@item.Picture.ImageUrl" title="@item.Picture.Title"
+                             class="size-20 rounded-md border border-slate-100 object-contain sm:size-24" />
+                    </a>
+                }
+                <div class="flex min-w-0 flex-1 flex-col gap-3 @@xl:flex-row @@xl:items-start @@xl:justify-between @@xl:gap-6">
+                    <div class="product min-w-0 flex-1 space-y-1 pr-8 text-sm @@xl:pr-0">
+                        <a href="@productUrl" class="product-name block font-semibold text-slate-900 hover:text-primary-600">@item.ProductName</a>
+                        @if (!string.IsNullOrEmpty(item.AttributeInfo))
+                        {
+                            <div class="attributes text-xs leading-relaxed text-slate-500">@Html.Raw(item.AttributeInfo)</div>
+                        }
+                        @if (!string.IsNullOrEmpty(item.RecurringInfo))
+                        {
+                            <div class="recurring-info text-xs text-slate-500">@Html.Raw(item.RecurringInfo)</div>
+                        }
+                        @if (!string.IsNullOrEmpty(item.RentalInfo))
+                        {
+                            <div class="rental-info text-xs text-slate-500">@Html.Raw(item.RentalInfo)</div>
+                        }
+                        @if (Model.ShowSku && !string.IsNullOrEmpty(item.Sku))
+                        {
+                            <div class="sku text-xs text-slate-500">@T("ShoppingCart.SKU"): <span class="sku-number">@item.Sku</span></div>
+                        }
+                        @if (Model.ShowVendorName)
+                        {
+                            <div class="vendor text-xs text-slate-500">@T("ShoppingCart.VendorName"): <span class="vendor-name">@item.VendorName</span></div>
+                        }
+                        <div class="unit-price text-xs text-slate-500">
+                            @T("ShoppingCart.UnitPrice"): <span class="product-unit-price font-medium text-slate-700">@item.UnitPrice</span>
+                        </div>
+                        @if (Model.IsEditable && item.AllowItemEditing)
+                        {
+                            var editCartItemUrl = await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = item.ProductSeName }, webHelper.GetCurrentRequestProtocol());
+                            editCartItemUrl = webHelper.ModifyQueryString(editCartItemUrl, "updatecartitemid", item.Id.ToString());
+                            <div class="edit-item text-xs">
+                                <a href="@editCartItemUrl" class="font-medium">@T("Common.Edit")</a>
+                            </div>
+                        }
+                        @if (item.Warnings.Count > 0)
+                        {
+                            <div class="message-error rounded-md bg-red-50 px-3 py-2 text-xs text-red-800">
+                                <ul class="space-y-0.5">
+                                    @foreach (var warning in item.Warnings)
+                                    {
+                                        <li>@Html.Raw(warning)</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="flex items-center justify-between gap-4 @@xl:justify-end @@xl:gap-6">
+                        <div class="quantity">
+                            <label class="td-title sr-only" for="itemquantity@(item.Id)">@T("ShoppingCart.Quantity")</label>
+                            @if (Model.IsEditable)
+                            {
+                                if (item.AllowedQuantities.Count > 0)
+                                {
+                                    <select name="itemquantity@(item.Id)" id="itemquantity@(item.Id)" class="qty-dropdown rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
+                                            @@change="updating = true; document.getElementById('updatecart').click()">
+                                        @foreach (var qty in item.AllowedQuantities)
+                                        {
+                                            <option selected="@qty.Selected" value="@qty.Value">@qty.Value</option>
+                                        }
+                                    </select>
+                                }
+                                else
+                                {
+                                    <div class="product-quantity flex items-stretch overflow-hidden rounded-md border border-slate-300 bg-white"
+                                         x-data="{
+                                             submit() { updating = true; document.getElementById('updatecart').click(); },
+                                             change(delta) {
+                                                 const input = this.$refs.qty;
+                                                 input.value = Math.max(0, (parseInt(input.value, 10) || 0) + delta);
+                                                 this.submit();
+                                             }
+                                         }">
+                                        <button type="button" class="quantity down px-2.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900" id="quantity-down-@(item.Id)" @@click="change(-1)" aria-label="-">&minus;</button>
+                                        <input name="itemquantity@(item.Id)" id="itemquantity@(item.Id)" x-ref="qty" type="text" inputmode="numeric" value="@(item.Quantity)"
+                                               class="qty-input w-11 border-x border-slate-200 py-1.5 text-center text-sm outline-none"
+                                               aria-label="@T("ShoppingCart.Quantity")"
+                                               @@change="submit()"
+                                               @@keydown.arrow-up.prevent="$refs.qty.value = (parseInt($refs.qty.value, 10) || 0) + 1"
+                                               @@keydown.arrow-down.prevent="$refs.qty.value = Math.max(0, (parseInt($refs.qty.value, 10) || 0) - 1)" />
+                                        <button type="button" class="quantity up px-2.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900" id="quantity-up-@(item.Id)" @@click="change(1)" aria-label="+">+</button>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="product-quantity text-sm text-slate-600">&times; @item.Quantity</span>
+                            }
+                        </div>
+
+                        <div class="subtotal text-right @@xl:min-w-24">
+                            <span class="td-title sr-only">@T("ShoppingCart.ItemTotal"):</span>
+                            <span class="product-subtotal text-base font-bold text-slate-900">@item.SubTotal</span>
+                            @if (Model.ShowItemDiscount && !string.IsNullOrEmpty(item.Discount))
+                            {
+                                <div class="discount text-xs text-emerald-700">
+                                    @T("ShoppingCart.ItemYouSave", item.Discount)
+                                </div>
+                                if (item.MaximumDiscountedQty.HasValue)
+                                {
+                                    <div class="discount-additional-info text-xs text-slate-500">
+                                        @T("ShoppingCart.MaximumDiscountedQty", item.MaximumDiscountedQty.Value)
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        @if (Model.IsEditable)
+                        {
+                            <div class="remove-from-cart absolute right-2 top-2 @@xl:static">
+                                @if (!item.DisableRemoval)
+                                {
+                                    <input type="checkbox" name="removefromcart" id="removefromcart@(item.Id)" value="@(item.Id)" class="sr-only" tabindex="-1" aria-hidden="true" />
+                                    <button type="button" name="updatecart" class="remove-btn rounded-md p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                                            title="@T("ShoppingCart.Remove")"
+                                            @@click="document.getElementById('removefromcart@(item.Id)').checked = true; updating = true; document.getElementById('updatecart').click()">
+                                        <span class="sr-only">@T("ShoppingCart.Remove")</span>
+                                        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </li>
+        }
+    </ul>
+</div>
