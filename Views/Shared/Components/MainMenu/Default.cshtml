@@ -4,95 +4,155 @@
 
 @*
     Nopwara main menu (replaces public.menu.js with Alpine).
-    lg+: horizontal bar, dropdowns open on hover or click.
-    < lg: rendered inside the header drawer, dropdowns become accordions.
-    A dropdown panel is shown when its item has [data-open] (click) or is hovered on lg+.
+    lg+: horizontal bar; dropdowns open on hover, focus or click.
+    < lg: _NopwaraMobileMenu, slide-in levels inside the header drawer.
+
+    Mega menu extras come from the Nopwara mega menu plugin (Widgets.NopwaraMegaMenu), when installed:
+    - HttpContext.Items["nopwara.megamenu"]: badge, icon, "View all" link and layout per item ("i{menuItemId}" / "c{categoryId}")
+    - widget zone "nopwara_megamenu_panel": promo / featured products / content columns inside a dropdown
+    Without the plugin the menu renders the core menu as is.
 *@
 @{
-    //dropdown motion. Below lg: accordion with a height animation (grid rows 0fr -> 1fr; the panel child clips).
-    //lg+: always rendered, fades/slides in on hover, focus or click; closing waits 100ms so moving between items never flickers.
-    const string panelMotion = "max-lg:grid max-lg:grid-rows-[0fr] max-lg:transition-[grid-template-rows] max-lg:duration-200 max-lg:ease-out max-lg:group-data-open:grid-rows-[1fr] "
-        + "lg:invisible lg:translate-y-1 lg:opacity-0 lg:transition-[opacity,transform,visibility] lg:delay-100 lg:duration-150 lg:ease-out "
+    var megaMenu = Context.Items["nopwara.megamenu"] as Dictionary<string, Dictionary<string, string>>;
+    //keys: "i{menuItemId}", or "c{categoryId}" for category items core generates (no menu item id)
+    Dictionary<string, string> ExtrasOf(MenuItemModel item)
+    {
+        var key = item.Id > 0 ? $"i{item.Id}" : item.MenuItemType == Nop.Core.Domain.Menus.MenuItemType.Category ? $"c{item.EntityId}" : null;
+        return key != null && megaMenu != null && megaMenu.TryGetValue(key, out var extras) ? extras : null;
+    }
+
+    //dropdowns are always rendered; they fade/slide in on hover, focus or click; closing waits 100ms so moving between items never flickers
+    const string panelMotion = "lg:invisible lg:translate-y-1 lg:opacity-0 lg:transition-[opacity,transform,visibility] lg:delay-100 lg:duration-150 lg:ease-out "
         + "lg:group-hover:visible lg:group-hover:translate-y-0 lg:group-hover:opacity-100 lg:group-hover:delay-0 "
         + "lg:group-focus-within:visible lg:group-focus-within:translate-y-0 lg:group-focus-within:opacity-100 lg:group-focus-within:delay-0 "
         + "lg:group-data-open:visible lg:group-data-open:translate-y-0 lg:group-data-open:opacity-100 lg:group-data-open:delay-0";
 }
-<ul role="menubar" class="menu @Model.CssClass flex flex-col py-2 lg:flex-row lg:items-center lg:gap-1 lg:py-0">
-    @foreach (var item in Model.Items)
+<ul role="menubar" class="menu @Model.CssClass flex items-center gap-1 max-lg:hidden">
+    @for (var index = 0; index < Model.Items.Count; index++)
     {
+        var item = Model.Items[index];
+        var extras = ExtrasOf(item);
         var hasChildren = item.ChildrenItems.Any();
-        var isGrid = item.Template == MenuItemTemplate.Grid;
+        var hasColumns = extras?.ContainsKey("columns") == true;
+        var linkData = new ViewDataDictionary(ViewData) { ["Level"] = 0, ["Extras"] = extras };
 
-        @if (!hasChildren)
+        @if (!hasChildren && !hasColumns)
         {
             <li role="none" class="menu__item @item.CssClass">
-                @await Html.PartialAsync("_NopwaraMenuLink.cshtml", item, new ViewDataDictionary(ViewData) { ["Level"] = 0 })
+                @await Html.PartialAsync("_NopwaraMenuLink.cshtml", item, linkData)
             </li>
             continue;
         }
 
+        var isGrid = hasChildren && item.Template == MenuItemTemplate.Grid;
+        //full width: grids, links + plugin columns, or when asked for; plugin columns alone open compact under the item
+        var isWide = isGrid || (hasColumns && hasChildren) || extras?.GetValueOrDefault("layout") == "full";
+        var extrasLeft = extras?.GetValueOrDefault("columnOrder") == "left";
+        var viewAllUrl = extras?.GetValueOrDefault("viewAllUrl");
+
         <li role="none"
-            class="menu__item menu-dropdown @item.CssClass group @(isGrid ? "lg:static" : "lg:relative")"
+            class="menu__item menu-dropdown @item.CssClass group @(isWide ? "lg:static" : "lg:relative")"
             x-data="{ open: false }"
             :data-open="open"
             @@click.outside="open = false"
             @@keydown.escape="open = false">
-            <div class="flex items-center justify-between">
-                @await Html.PartialAsync("_NopwaraMenuLink.cshtml", item, new ViewDataDictionary(ViewData) { ["Level"] = 0 })
+            <div class="flex items-center">
+                @await Html.PartialAsync("_NopwaraMenuLink.cshtml", item, linkData)
                 <button type="button"
-                        class="rounded-md p-2 text-slate-500 hover:bg-slate-100 lg:-ml-2 lg:p-1"
+                        class="-ml-2 rounded-md p-1 text-slate-500 hover:bg-slate-100"
                         @@click="open = !open"
                         :aria-expanded="open"
                         aria-haspopup="menu">
                     <span class="sr-only">@item.Title</span>
-                    <svg class="size-4 transition-transform duration-200 group-data-open:rotate-180 lg:group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                    <svg class="size-4 transition-transform duration-200 group-data-open:rotate-180 group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
                 </button>
             </div>
 
-            @if (isGrid)
+            @if (isWide)
             {
                 var columns = item.NumberOfItemsPerGridRow > 0 ? item.NumberOfItemsPerGridRow : 4;
                 <div role="menu" aria-label="@item.Title"
-                     class="menu__grid-view @panelMotion lg:absolute lg:inset-x-0 lg:top-full lg:z-30 lg:border-t lg:border-slate-200 lg:bg-white lg:shadow-lg">
-                    <div class="min-h-0 overflow-hidden lg:overflow-visible">
-                    <div class="grid gap-x-6 gap-y-4 py-2 pl-3 lg:grid-cols-[repeat(var(--cols),minmax(0,1fr))] lg:px-8 lg:py-6" style="--cols: @columns">
-                        @foreach (var menuGroup in item.ChildrenItems)
+                     class="menu__grid-view @panelMotion absolute inset-x-0 top-full z-30 border-t border-slate-200 bg-white shadow-lg">
+                    <div class="site-container flex gap-8 py-6">
+                        @if (hasChildren || !string.IsNullOrEmpty(viewAllUrl))
                         {
-                            <div role="none" class="menu__group space-y-1">
-                                <a href="@(string.IsNullOrEmpty(menuGroup.Url) ? null : menuGroup.Url)" role="menuitem"
-                                   class="menu__image-link flex items-center gap-3 font-semibold text-slate-900 hover:text-primary-600 lg:flex-col lg:items-start">
-                                    @if (menuGroup.Picture is not null)
-                                    {
-                                        <img src="@menuGroup.Picture.ImageUrl" alt="@menuGroup.Picture.AlternateText" title="@menuGroup.Picture.Title" class="menu__image size-10 rounded object-contain lg:size-24">
-                                    }
-                                    <span class="menu__group-title">@menuGroup.Title</span>
-                                </a>
-                                @if (menuGroup.ChildrenItems.Any())
+                            <div class="min-w-0 flex-1 @(extrasLeft ? "order-last" : null)">
+                                @if (isGrid)
                                 {
-                                    <ul role="menu" class="space-y-1">
-                                        @foreach (var child in menuGroup.ChildrenItems)
+                                    <div class="grid gap-x-6 gap-y-5 grid-cols-[repeat(var(--cols),minmax(0,1fr))]" style="--cols: @(hasColumns ? Math.Min(columns, 3) : columns)">
+                                        @foreach (var menuGroup in item.ChildrenItems)
                                         {
-                                            <li role="none">@await Html.PartialAsync("_NopwaraMenuLink.cshtml", child, new ViewDataDictionary(ViewData) { ["Level"] = 2 })</li>
+                                            <div role="none" class="menu__group space-y-1">
+                                                <a href="@(string.IsNullOrEmpty(menuGroup.Url) ? null : menuGroup.Url)" role="menuitem"
+                                                   class="menu__image-link flex flex-col items-start gap-3 font-semibold text-slate-900 hover:text-primary-600">
+                                                    @if (menuGroup.Picture is not null)
+                                                    {
+                                                        <img src="@menuGroup.Picture.ImageUrl" alt="@menuGroup.Picture.AlternateText" title="@menuGroup.Picture.Title" class="menu__image size-24 rounded object-contain">
+                                                    }
+                                                    <span class="menu__group-title">@menuGroup.Title</span>
+                                                </a>
+                                                @if (menuGroup.ChildrenItems.Any())
+                                                {
+                                                    <ul role="menu" class="space-y-1">
+                                                        @foreach (var child in menuGroup.ChildrenItems)
+                                                        {
+                                                            <li role="none">@await Html.PartialAsync("_NopwaraMenuLink.cshtml", child, new ViewDataDictionary(ViewData) { ["Level"] = 2, ["Extras"] = ExtrasOf(child) })</li>
+                                                        }
+                                                    </ul>
+                                                }
+                                            </div>
                                         }
-                                    </ul>
+                                    </div>
+                                }
+                                else if (hasChildren)
+                                {
+                                    @*list template in a wide panel: the links flow into columns*@
+                                    <div class="columns-2 gap-8 xl:columns-3 [&>ul]:break-inside-avoid">
+                                        @await Html.PartialAsync("_NopwaraMenuList.cshtml", item.ChildrenItems, new ViewDataDictionary(ViewData) { ["Level"] = 1, ["MegaMenu"] = megaMenu })
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(viewAllUrl))
+                                {
+                                    @await Html.PartialAsync("_NopwaraMenuViewAll.cshtml", extras)
                                 }
                             </div>
                         }
-                    </div>
+                        @if (hasColumns)
+                        {
+                            <div class="@(extrasLeft ? "order-first" : null) @(hasChildren ? "shrink-0" : "min-w-0 flex-1")">
+                                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = "nopwara_megamenu_panel", additionalData = item })
+                            </div>
+                        }
                     </div>
                 </div>
             }
             else
             {
+                @*compact dropdowns of items in the right half of the bar open towards the left, so they stay on screen*@
                 <div role="menu" aria-label="@item.Title"
-                     class="menu__list-view @panelMotion lg:absolute lg:left-0 lg:top-full lg:z-30 lg:min-w-60 lg:pt-1">
-                    <div class="min-h-0 overflow-hidden lg:overflow-visible">
-                        <div class="py-1 pl-3 lg:rounded-lg lg:border lg:border-slate-200 lg:bg-white lg:p-2 lg:shadow-lg">
-                            @await Html.PartialAsync("_NopwaraMenuList.cshtml", item.ChildrenItems, new ViewDataDictionary(ViewData) { ["Level"] = 1 })
-                        </div>
+                     class="menu__list-view @panelMotion absolute @(index >= Model.Items.Count / 2 ? "right-0" : "left-0") top-full z-30 min-w-60 pt-1">
+                    <div class="rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
+                        @if (hasChildren)
+                        {
+                            @await Html.PartialAsync("_NopwaraMenuList.cshtml", item.ChildrenItems, new ViewDataDictionary(ViewData) { ["Level"] = 1, ["MegaMenu"] = megaMenu })
+                        }
+                        @if (hasColumns)
+                        {
+                            <div class="p-3">
+                                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = "nopwara_megamenu_panel", additionalData = item })
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(viewAllUrl))
+                        {
+                            <div class="mt-1 border-t border-slate-100 px-2 pt-2">
+                                @await Html.PartialAsync("_NopwaraMenuViewAll.cshtml", extras)
+                            </div>
+                        }
                     </div>
                 </div>
             }
         </li>
     }
 </ul>
+
+@await Html.PartialAsync("_NopwaraMobileMenu.cshtml", Model, new ViewDataDictionary(ViewData) { ["MegaMenu"] = megaMenu })

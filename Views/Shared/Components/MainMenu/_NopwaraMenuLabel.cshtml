@@ -1,0 +1,31 @@
+@model MenuItemModel
+
+@*Icon + title + badge of a menu item (desktop bar, dropdowns and mobile levels). ViewData["Extras"]: see Default.cshtml.*@
+@{
+    var extras = ViewData["Extras"] as Dictionary<string, string>;
+    var icon = extras?.GetValueOrDefault("icon");
+    var badge = extras?.GetValueOrDefault("badge");
+    //full class names (not concatenated) so Tailwind finds them
+    var badgeCss = extras?.GetValueOrDefault("badgeColor") switch
+    {
+        "red" => "bg-red-100 text-red-700",
+        "green" => "bg-emerald-100 text-emerald-700",
+        "amber" => "bg-amber-100 text-amber-800",
+        "slate" => "bg-slate-800 text-white",
+        _ => "bg-primary-100 text-primary-700"
+    };
+}
+@if (!string.IsNullOrEmpty(icon))
+{
+    <svg class="menu__icon size-4 shrink-0 text-slate-400 group-hover:text-current" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+        @foreach (var d in icon.Split('|'))
+        {
+            <path stroke-linecap="round" stroke-linejoin="round" d="@d" />
+        }
+    </svg>
+}
+<span class="menu__title">@Model.Title</span>
+@if (!string.IsNullOrEmpty(badge))
+{
+    <span class="menu__badge rounded-full px-1.5 py-0.5 text-[0.625rem] font-bold uppercase leading-none tracking-wide @badgeCss">@badge</span>
+}

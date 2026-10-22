@@ -5,7 +5,7 @@ A lightweight storefront theme for nopCommerce 5.00, built with **Tailwind CSS v
 ## Features
 
 - **Layout:**
-  - header with mega-menu, account links, search and flyout cart (with a Checkout button);
+  - header with the main menu (hover dropdowns on desktop, slide-in levels on mobile), account links, search and flyout cart (with a Checkout button);
   - footer, one- and two-column layouts;
   - toast notifications instead of the core notification bar.
 - **Catalog:**
@@ -22,6 +22,7 @@ A lightweight storefront theme for nopCommerce 5.00, built with **Tailwind CSS v
 - **Cart and checkout:** cart page, order-completed page, and the core one-page checkout styled. For a true single-page checkout, use [nopwara-checkout](https://github.com/sohelrana09/nopwara-checkout).
 - **Generic core pages:** account, login, register, blog and topics are styled globally in `tailwind/app.css`. Views that aren't overridden still look consistent.
 - **Widget zones for companion plugins:**
+  - `nopwara_megamenu_panel` / `nopwara_megamenu_panel_mobile` inside main menu dropdowns and mobile menu levels;
   - `nopwara_productdetails_after_tabs` on the product page;
   - `nopwara_productbox_actions` on product boxes;
   - `nopwara_flyoutcart_top` in the flyout cart.
@@ -38,6 +39,7 @@ A lightweight storefront theme for nopCommerce 5.00, built with **Tailwind CSS v
 | Product bundles | [nopwara-bundles](https://github.com/sohelrana09/nopwara-bundles) |
 | Webhooks | [nopwara-webhooks](https://github.com/sohelrana09/nopwara-webhooks) |
 | Google sign-in | [nopwara-google-signin](https://github.com/sohelrana09/nopwara-google-signin) |
+| Mega menu (badges, icons, "View all", promo banners, featured products, content columns) | [nopwara-mega-menu](https://github.com/sohelrana09/nopwara-mega-menu) |
 
 `tailwind/app.css` scans each plugin's `Views` folder (`@source` lines). Remove the lines for plugins you don't use, or keep them: a missing folder is skipped.
 

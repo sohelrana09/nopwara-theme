@@ -199,6 +199,58 @@
             };
         });
 
+        /*
+         * Mobile main menu (Views/Shared/Components/MainMenu/_NopwaraMobileMenu.cshtml): a stack of open levels.
+         * Each level is a panel that slides in from the right; the header drawer's "mobileOpen" closes it all.
+         */
+        window.Alpine.data('nopwaraMobileMenu', function () {
+            return {
+                stack: [],
+                openers: [],
+
+                init: function () {
+                    //back to the root level once the drawer has closed (after its slide-out)
+                    if (this.mobileOpen !== undefined) {
+                        this.$watch('mobileOpen', (open) => {
+                            if (!open)
+                                setTimeout(() => { this.stack = []; this.openers = []; }, 250);
+                        });
+                    }
+                },
+
+                open: function (id, opener) {
+                    this.stack = this.stack.concat(id);
+                    this.openers = this.openers.concat(opener || null);
+                    this.$nextTick(() => {
+                        var panel = this.$root.querySelector('[data-panel="' + id + '"]');
+                        var first = panel && panel.querySelector('button, a[href]');
+                        if (first)
+                            first.focus({ preventScroll: true });
+                    });
+                },
+
+                back: function () {
+                    var opener = this.openers[this.openers.length - 1];
+                    this.stack = this.stack.slice(0, -1);
+                    this.openers = this.openers.slice(0, -1);
+                    if (opener)
+                        this.$nextTick(() => opener.focus({ preventScroll: true }));
+                },
+
+                isTop: function (id) {
+                    return this.stack[this.stack.length - 1] === id;
+                },
+
+                panelClass: function (id) {
+                    var index = this.stack.indexOf(id);
+                    if (index === -1)
+                        return 'translate-x-full';
+                    //a level under the open one slides a bit to the left and fades
+                    return index === this.stack.length - 1 ? 'translate-x-0' : '-translate-x-1/4 opacity-0';
+                }
+            };
+        });
+
         window.Alpine.data('nopwaraToasts', function () {
             return {
                 toasts: [],

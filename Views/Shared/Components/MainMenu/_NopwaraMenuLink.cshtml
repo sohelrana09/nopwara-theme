@@ -1,17 +1,25 @@
 @model MenuItemModel
 
-@*Level 0 = top bar item, 1+ = dropdown item. Items without a URL render as plain text.*@
+@*
+    Level 0 = top bar item, 1+ = dropdown item. Items without a URL render as plain text.
+    ViewData["Extras"]: mega menu extras of the item (icon, badge), see Default.cshtml.
+*@
 @{
     var level = ViewData["Level"] as int? ?? 0;
+    var extras = ViewData["Extras"] as Dictionary<string, string>;
     var css = level == 0
-        ? "block rounded-md px-2 py-2 text-sm font-semibold text-slate-800 transition-colors hover:text-primary-600 lg:px-3 lg:group-hover:text-primary-600"
-        : "block rounded-md px-2 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-primary-600";
+        ? "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold text-slate-800 transition-colors hover:text-primary-600 group-hover:text-primary-600"
+        : "flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-primary-600";
 }
 @if (string.IsNullOrEmpty(Model.Url))
 {
-    <span role="menuitem" class="menu__link menu__link--inactive @css cursor-default hover:bg-transparent hover:text-inherit">@Model.Title</span>
+    <span role="menuitem" class="menu__link menu__link--inactive @css cursor-default hover:bg-transparent hover:text-inherit">
+        @await Html.PartialAsync("_NopwaraMenuLabel.cshtml", Model, ViewData)
+    </span>
 }
 else
 {
-    <a href="@Model.Url" role="menuitem" class="menu__link @css">@Model.Title</a>
+    <a href="@Model.Url" role="menuitem" class="menu__link @css">
+        @await Html.PartialAsync("_NopwaraMenuLabel.cshtml", Model, ViewData)
+    </a>
 }

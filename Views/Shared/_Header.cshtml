@@ -1,6 +1,6 @@
 @*
     Nopwara header. One Alpine scope (mobileOpen) drives the mobile drawer.
-    The main menu is rendered once: horizontal bar on lg+, off-canvas drawer below lg.
+    The main menu: horizontal bar on lg+, slide-in levels in the off-canvas drawer below lg (MainMenu/Default.cshtml).
 *@
 <header class="header relative z-40 bg-white shadow-sm"
         x-data="{ mobileOpen: false }"
@@ -55,7 +55,7 @@
     <nav id="nopwara-nav"
          :data-open="mobileOpen"
          aria-label="@T("Menu")"
-         class="header-menu fixed inset-y-0 left-0 z-50 w-80 max-w-[85%] overflow-y-auto bg-white shadow-xl transition-transform duration-200 max-lg:-translate-x-full max-lg:data-open:translate-x-0 lg:static lg:z-auto lg:w-auto lg:max-w-none lg:overflow-visible lg:border-t lg:border-slate-200 lg:shadow-none lg:transition-none">
+         class="header-menu fixed inset-y-0 left-0 z-50 flex w-80 max-w-[85%] flex-col overflow-hidden bg-white shadow-xl transition-transform duration-200 max-lg:-translate-x-full max-lg:data-open:translate-x-0 lg:static lg:z-auto lg:w-auto lg:max-w-none lg:overflow-visible lg:border-t lg:border-slate-200 lg:shadow-none lg:transition-none">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 lg:hidden">
             <span class="text-base font-semibold">@T("Menu")</span>
             <button type="button" class="rounded-md p-2 text-slate-500 hover:bg-slate-100" @@click="mobileOpen = false">
@@ -63,7 +63,8 @@
                 <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
             </button>
         </div>
-        <div class="site-container relative">
+        @*mobile: the menu fills the rest of the drawer (its levels scroll inside); lg+: the bar*@
+        <div class="site-container relative min-h-0 flex-1 max-lg:px-0 lg:block">
             @await Component.InvokeAsync(typeof(MainMenuViewComponent))
         </div>
     </nav>

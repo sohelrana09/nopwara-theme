@@ -1,18 +1,21 @@
 @model IList<MenuItemModel>
 
-@*Nested list used inside list-template dropdowns; deeper levels are indented, not flown out*@
+@*Nested list used inside list-template dropdowns; deeper levels are indented, not flown out. ViewData["MegaMenu"]: extras by key (see Default.cshtml).*@
 @{
     var level = ViewData["Level"] as int? ?? 1;
+    var megaMenu = ViewData["MegaMenu"] as Dictionary<string, Dictionary<string, string>>;
 }
 <ul role="menu" class="space-y-0.5">
     @foreach (var item in Model)
     {
+        var key = item.Id > 0 ? $"i{item.Id}" : item.MenuItemType == Nop.Core.Domain.Menus.MenuItemType.Category ? $"c{item.EntityId}" : null;
+        var extras = key != null && megaMenu != null && megaMenu.TryGetValue(key, out var found) ? found : null;
         <li role="none" class="@item.CssClass">
-            @await Html.PartialAsync("_NopwaraMenuLink.cshtml", item, new ViewDataDictionary(ViewData) { ["Level"] = level })
+            @await Html.PartialAsync("_NopwaraMenuLink.cshtml", item, new ViewDataDictionary(ViewData) { ["Level"] = level, ["Extras"] = extras })
             @if (item.ChildrenItems.Any())
             {
                 <div class="pl-3">
-                    @await Html.PartialAsync("_NopwaraMenuList.cshtml", item.ChildrenItems, new ViewDataDictionary(ViewData) { ["Level"] = level + 1 })
+                    @await Html.PartialAsync("_NopwaraMenuList.cshtml", item.ChildrenItems, new ViewDataDictionary(ViewData) { ["Level"] = level + 1, ["MegaMenu"] = megaMenu })
                 </div>
             }
         </li>
