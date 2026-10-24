@@ -1,4 +1,4 @@
-/* Tailwind source for the Nopwara theme. Build output: ../Content/css/styles.css */
+/* Tailwind source for the Nopwara theme. Build output: ../Content/css/styles.min.css */
 @import "tailwindcss" source(none);
 
 /* Only scan files that use Tailwind classes: the theme's own views and scripts */
@@ -38,6 +38,21 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+}
+
+/* colour presets: <html class="palette-medical"> (set by Views/Shared/_Root.cshtml from the
+   "nopwarathemesettings.colorpreset" setting); utilities read the variables, so only these change */
+@layer base {
+  .palette-medical {
+    /* clinical teal */
+    --color-primary-50: oklch(0.97 0.025 190);
+    --color-primary-100: oklch(0.94 0.045 190);
+    --color-primary-200: oklch(0.88 0.075 190);
+    --color-primary-300: oklch(0.8 0.1 190);
+    --color-primary-500: oklch(0.6 0.11 192);
+    --color-primary-600: oklch(0.5 0.1 195);
+    --color-primary-700: oklch(0.43 0.085 197);
   }
 }
 

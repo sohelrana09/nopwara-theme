@@ -9,7 +9,9 @@
     var themeName = await themeContext.GetWorkingThemeNameAsync();
 
     //Tailwind build output (see tailwind/README.md)
-    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/styles.css");
+    //".min.css": already minified by Tailwind, and nopCommerce 4.90's CSS minifier (which skips *.min.css) would turn
+    //"@media not all and (min-width:64rem)" into invalid "and(" and drop every max-* responsive rule
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/styles.min.css");
 
     //footer scripts render in reverse order of registration: nopwara.js, then Alpine, then core jQuery scripts
     NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/alpine.min.js");

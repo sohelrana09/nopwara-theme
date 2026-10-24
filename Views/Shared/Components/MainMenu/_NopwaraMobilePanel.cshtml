@@ -54,7 +54,7 @@
                             @@click="open('@(panelId)-@(i)', $el)">
                         @if (child.Picture is not null)
                         {
-                            <img src="@child.Picture.ImageUrl" alt="@child.Picture.AlternateText" class="size-9 shrink-0 rounded object-contain" loading="lazy" />
+                            <img data-src="@child.Picture.ImageUrl" alt="@child.Picture.AlternateText" class="size-9 shrink-0 rounded object-contain" loading="lazy" />
                         }
                         <span class="flex min-w-0 items-center gap-1.5">@await Html.PartialAsync("_NopwaraMenuLabel.cshtml", child, linkData)</span>
                         <svg class="ml-auto size-5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
@@ -65,7 +65,7 @@
                     <a href="@(string.IsNullOrEmpty(child.Url) ? null : child.Url)" role="menuitem" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">
                         @if (child.Picture is not null)
                         {
-                            <img src="@child.Picture.ImageUrl" alt="@child.Picture.AlternateText" class="size-9 shrink-0 rounded object-contain" loading="lazy" />
+                            <img data-src="@child.Picture.ImageUrl" alt="@child.Picture.AlternateText" class="size-9 shrink-0 rounded object-contain" loading="lazy" />
                         }
                         <span class="flex min-w-0 items-center gap-1.5">@await Html.PartialAsync("_NopwaraMenuLabel.cshtml", child, linkData)</span>
                     </a>
