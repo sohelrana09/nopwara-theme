@@ -1,0 +1,38 @@
+@model IList<ProductOverviewModel>
+@*
+    Nopwara product carousel (home page products, bestsellers): one horizontal row with CSS scroll snapping, swipe on touch,
+    previous/next buttons when the row overflows (Alpine "nopwaraCarousel", Content/js/nopwara.js). No slider library.
+    ViewData: "NopwaraCarouselTitle" (heading), "NopwaraCarouselClass" (section class kept from core: home-page-product-grid,
+    bestsellers), "NopwaraCarouselId" (optional anchor).
+*@
+@{
+    var title = ViewData["NopwaraCarouselTitle"] as string;
+    var languageId = (await NopwaraWorkContext.GetWorkingLanguageAsync()).Id;
+    var previous = await NopwaraLocalization.GetResourceAsync("Nopwara.Carousel.Previous", languageId, logIfNotFound: false, defaultValue: "Previous");
+    var next = await NopwaraLocalization.GetResourceAsync("Nopwara.Carousel.Next", languageId, logIfNotFound: false, defaultValue: "Next");
+    const string arrowCss = "nw-icon-btn disabled:pointer-events-none disabled:opacity-40";
+}
+@if (Model.Count > 0)
+{
+    <section class="product-grid @ViewData["NopwaraCarouselClass"] space-y-5" id="@ViewData["NopwaraCarouselId"]" x-data="nopwaraCarousel">
+        <div class="flex items-end justify-between gap-4">
+            <h2 class="title text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">@title</h2>
+            <div class="flex shrink-0 gap-2" x-show="scrollable" x-cloak>
+                <button type="button" class="@arrowCss" :disabled="atStart" @@click="go(-1)" aria-label="@previous">
+                    <svg class="size-4 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                </button>
+                <button type="button" class="@arrowCss" :disabled="atEnd" @@click="go(1)" aria-label="@next">
+                    <svg class="size-4 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                </button>
+            </div>
+        </div>
+        <div class="item-grid nw-carousel" x-ref="track" @@scroll.passive="update()">
+            @foreach (var item in Model)
+            {
+                <div class="item-box">
+                    @await Html.PartialAsync("_ProductBox", item)
+                </div>
+            }
+        </div>
+    </section>
+}

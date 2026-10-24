@@ -111,6 +111,39 @@
          * Header search box (Views/Shared/Components/SearchBox/Default.cshtml): submit (minimum length, category → advanced
          * search) and core's autocomplete as a fallback when the Nopwara instant search plugin isn't active.
          */
+        /*
+         * Product carousel (Views/Shared/_NopwaraProductCarousel.cshtml): the row scrolls natively (scroll snapping, swipe);
+         * the buttons move it by one view and are disabled at either end. Works right-to-left.
+         */
+        window.Alpine.data('nopwaraCarousel', function () {
+            return {
+                scrollable: false,
+                atStart: true,
+                atEnd: false,
+
+                init: function () {
+                    var self = this;
+                    this.update();
+                    if (window.ResizeObserver)
+                        new ResizeObserver(function () { self.update(); }).observe(this.$refs.track);
+                },
+
+                update: function () {
+                    var track = this.$refs.track;
+                    var x = Math.abs(track.scrollLeft);
+                    this.scrollable = track.scrollWidth > track.clientWidth + 1;
+                    this.atStart = x <= 1;
+                    this.atEnd = x + track.clientWidth >= track.scrollWidth - 1;
+                },
+
+                go: function (direction) {
+                    var track = this.$refs.track;
+                    var rtl = getComputedStyle(track).direction === 'rtl';
+                    track.scrollBy({ left: direction * track.clientWidth * (rtl ? -1 : 1), behavior: 'smooth' });
+                }
+            };
+        });
+
         window.Alpine.data('nopwaraSearchBox', function (o) {
             var cache = new Map();
             var timer = null;
