@@ -34,7 +34,7 @@
         }
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.SearchBoxBeforeSearchButton, additionalData = Model })
         <button type="submit" class="button-1 search-box-button flex items-center gap-2 bg-primary-600 px-4 text-sm font-semibold text-white hover:bg-primary-700">
-            <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+            <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-94925d" /></svg>
             <span class="sr-only sm:not-sr-only">@T("Search.Button")</span>
         </button>
 
@@ -74,6 +74,9 @@
 
         @if (Model.AutoCompleteEnabled && !instantSearchActive)
         {
+            //Nopwara: the core autocomplete needs jQuery UI at once (.data("ui-autocomplete") below), not on demand
+            NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery-ui-dist/jquery-ui.min.js");
+            NopHtml.AppendCssFileParts("~/lib_npm/jquery-ui-dist/jquery-ui.min.css");
             <script asp-location="Footer">
                 $(function() {
                     var cache = new Map();

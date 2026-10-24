@@ -21,7 +21,7 @@
 
         <section class="section order-completed rounded-xl border border-slate-200 bg-white px-6 py-10 text-center sm:px-10 sm:py-12">
             <div class="mx-auto flex size-16 animate-[nopwara-toast-in_0.3s_ease-out] items-center justify-center rounded-full bg-emerald-100 ring-8 ring-emerald-50">
-                <svg class="size-9 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                <svg class="size-9 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-9e600b" /></svg>
             </div>
 
             <div class="page-title mt-6">
@@ -41,12 +41,12 @@
             <div class="buttons mt-8 flex flex-col-reverse items-stretch justify-center gap-3 sm:flex-row sm:items-center">
                 <a href="@Url.RouteUrl(NopRouteNames.General.HOMEPAGE)"
                    class="order-completed-continue-button btn border border-slate-300 bg-white px-5 py-2.5 text-slate-700 hover:bg-slate-50">
-                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-aba643" /></svg>
                     @T("Checkout.ThankYou.Continue")
                 </a>
                 <a href="@orderDetailsUrl" class="details-link btn btn-primary px-5 py-2.5">
                     @T("Order.OrderInformation")
-                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-b06737" /></svg>
                 </a>
             </div>
         </section>

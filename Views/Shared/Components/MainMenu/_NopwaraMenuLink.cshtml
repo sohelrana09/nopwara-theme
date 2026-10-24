@@ -7,9 +7,8 @@
 @{
     var level = ViewData["Level"] as int? ?? 0;
     var extras = ViewData["Extras"] as Dictionary<string, string>;
-    var css = level == 0
-        ? "flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-semibold text-slate-800 xl:px-3 group-[.menu--compact]/bar:px-2 group-[.menu--compact]/bar:text-[0.8125rem] group-[.menu--compact]/bar:[&>svg]:hidden transition-colors hover:text-primary-600 group-hover:text-primary-600"
-        : "flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-primary-600";
+    //component classes in tailwind/app.css
+    var css = level == 0 ? "nw-menu-top" : "nw-menu-link";
 }
 @if (string.IsNullOrEmpty(Model.Url))
 {

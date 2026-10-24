@@ -200,12 +200,17 @@
         });
 
         /*
-         * Menu panels cost nothing until they open: pictures are rendered with data-src, and the mega menu's featured
-         * products are a placeholder with data-megamenu-products (their URL). This loads both the first time a panel opens.
+         * Menu panels cost nothing until they open: heavy markup sits in <template data-nw-lazy>, pictures use data-src, and the
+         * mega menu's featured products are a placeholder with data-megamenu-products (their URL). This builds and loads them
+         * the first time a panel (or the mobile drawer) opens.
          */
         window.nopwaraLoadPanel = function (el) {
             if (!el)
                 return;
+            //lazy markup (dropdown extras, the mobile menu): Alpine initialises it as it is added
+            el.querySelectorAll('template[data-nw-lazy]').forEach(function (template) {
+                template.replaceWith(template.content.cloneNode(true));
+            });
             el.querySelectorAll('img[data-src]').forEach(function (img) {
                 img.src = img.getAttribute('data-src');
                 img.removeAttribute('data-src');
@@ -227,33 +232,169 @@
         };
 
         /*
+         * Mobile menu, built from the desktop menu the first time the drawer opens, so pages don't ship the menu twice.
+         * Reads the desktop bar (Views/Shared/Components/MainMenu/Default.cshtml): top links, dropdown lists or grid groups,
+         * "View all" links and the mega menu promo (inside the dropdown's lazy template). Writes the slide-in levels
+         * driven by nopwaraMobileMenu. The container carries the sprite URL and the texts (data-icons, data-back, data-view-all).
+         */
+        window.nopwaraBuildMobileMenu = function (box) {
+            if (!box || box.hasAttribute('data-built'))
+                return;
+            box.setAttribute('data-built', '');
+
+            var bar = document.querySelector('ul[role="menubar"]');
+            if (!bar)
+                return;
+
+            var icon = function (id, css) {
+                return '<svg class="' + css + '" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">'
+                    + '<use href="' + box.getAttribute('data-icons') + '#' + id + '" /></svg>';
+            };
+            var escape = function (text) {
+                var span = document.createElement('span');
+                span.textContent = text;
+                return span.innerHTML;
+            };
+
+            //desktop markup -> { label (html), title, url, picture, children, viewAll, promo }
+            var parseList = function (ul) {
+                return Array.prototype.filter.call(ul.children, function (li) { return li.tagName === 'LI'; }).map(function (li) {
+                    var link = li.querySelector(':scope > .nw-menu-link');
+                    var nested = li.querySelector(':scope > .pl-3 > ul');
+                    return {
+                        label: link ? link.innerHTML : '',
+                        title: link ? link.textContent.trim() : '',
+                        url: link ? link.getAttribute('href') : null,
+                        children: nested ? parseList(nested) : []
+                    };
+                });
+            };
+            var items = Array.prototype.map.call(bar.children, function (li) {
+                var link = li.querySelector('.nw-menu-top');
+                var panel = li.querySelector(':scope > [role="menu"]');
+                var item = {
+                    label: link ? link.innerHTML : '',
+                    title: link ? (link.querySelector('.menu__title') || link).textContent.trim() : '',
+                    url: link ? link.getAttribute('href') : null,
+                    children: []
+                };
+                if (!panel)
+                    return item;
+
+                var groups = panel.querySelectorAll('.menu__group');
+                if (groups.length) {
+                    item.children = Array.prototype.map.call(groups, function (group) {
+                        var a = group.querySelector('.menu__image-link');
+                        var img = a && a.querySelector('img');
+                        var sub = group.querySelector(':scope > ul');
+                        var title = a ? a.textContent.trim() : '';
+                        return {
+                            label: '<span class="menu__title">' + escape(title) + '</span>',
+                            title: title,
+                            url: a ? a.getAttribute('href') : null,
+                            picture: img ? (img.getAttribute('data-src') || img.getAttribute('src')) : null,
+                            children: sub ? parseList(sub) : []
+                        };
+                    });
+                } else {
+                    var list = panel.querySelector('ul[role="menu"]');
+                    item.children = list ? parseList(list) : [];
+                }
+
+                var viewAll = panel.querySelector('.menu__view-all');
+                if (viewAll)
+                    item.viewAll = { url: viewAll.getAttribute('href'), text: viewAll.textContent.trim() };
+
+                panel.querySelectorAll('template[data-nw-lazy]').forEach(function (template) {
+                    var promo = template.content.querySelector('.nopwara-megamenu-promo');
+                    if (promo && !item.promo) {
+                        promo = promo.cloneNode(true);
+                        promo.className = 'nopwara-megamenu-promo px-4 pb-4 pt-2';
+                        item.promo = promo.outerHTML;
+                    }
+                });
+                return item;
+            });
+
+            //levels: the root list, then one panel per item with children (siblings, so they slide in the same container)
+            var panels = [];
+            var renderPanel = function (item, id, depth) {
+                var viewAll = item.viewAll || (item.url ? { url: item.url, text: (box.getAttribute('data-view-all') || '{0}').replace('{0}', item.title) } : null);
+                var html = '<div class="absolute inset-0 overflow-y-auto bg-white transition duration-300 ease-out" x-cloak data-panel="' + id + '" role="menu" aria-label="' + escape(item.title) + '"'
+                    + ' :class="panelClass(\'' + id + '\')" :inert="!isTop(\'' + id + '\')">'
+                    + '<div class="sticky top-0 z-10 flex items-center gap-2 border-b border-slate-200 bg-white px-2 py-2">'
+                    + '<button type="button" class="flex items-center gap-1 rounded-md px-2 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100" @click="back()">'
+                    + icon('i-34104a', 'size-5') + escape(box.getAttribute('data-back') || 'Back') + '</button>'
+                    + '<span class="truncate text-base font-semibold text-slate-900">' + escape(item.title) + '</span></div>';
+                if (viewAll)
+                    html += '<a href="' + viewAll.url + '" role="menuitem" class="flex items-center justify-between px-4 py-3.5 text-sm font-semibold text-primary-700 hover:bg-slate-50">'
+                        + escape(viewAll.text) + icon('i-b06737', 'size-4') + '</a>';
+                html += '<ul class="divide-y divide-slate-100 border-t border-slate-100">';
+                item.children.forEach(function (child, i) {
+                    var picture = child.picture ? '<img data-src="' + child.picture + '" alt="" class="size-9 shrink-0 rounded object-contain" />' : '';
+                    var label = '<span class="flex min-w-0 items-center gap-1.5">' + child.label + '</span>';
+                    if (child.children.length) {
+                        html += '<li role="none"><button type="button" role="menuitem" aria-haspopup="menu" class="nw-mlink nw-mlink-parent" @click="open(\'' + id + '-' + i + '\', $el)">'
+                            + picture + label + icon('i-ae0c6e', 'ml-auto size-5 shrink-0 text-slate-400') + '</button></li>';
+                        panels.push(function () { return renderPanel(child, id + '-' + i, depth + 1); });
+                    } else {
+                        html += '<li role="none"><a' + (child.url ? ' href="' + child.url + '"' : '') + ' role="menuitem" class="nw-mlink">' + picture + label + '</a></li>';
+                    }
+                });
+                html += '</ul>' + (depth === 1 && item.promo ? item.promo : '') + '</div>';
+                return html;
+            };
+
+            var root = '<ul role="menu" class="divide-y divide-slate-100 py-1">';
+            items.forEach(function (item, i) {
+                if (item.children.length) {
+                    root += '<li role="none"><button type="button" role="menuitem" aria-haspopup="menu" class="nw-mtop" @click="open(\'m' + i + '\', $el)">'
+                        + item.label + icon('i-ae0c6e', 'ml-auto size-5 shrink-0 text-slate-400') + '</button></li>';
+                    panels.push(function () { return renderPanel(item, 'm' + i, 1); });
+                } else if (item.url) {
+                    root += '<li role="none"><a href="' + item.url + '" role="menuitem" class="nw-mtop">' + item.label + '</a></li>';
+                } else {
+                    root += '<li role="none"><span role="menuitem" class="nw-mtop text-slate-500">' + item.label + '</span></li>';
+                }
+            });
+            root += '</ul>';
+
+            var levels = '';
+            for (var p = 0; p < panels.length; p++)
+                levels += panels[p]();
+
+            //Alpine initialises the component as it is added
+            box.innerHTML = '<div class="nopwara-mobile-menu relative h-full overflow-hidden" x-data="nopwaraMobileMenu()">'
+                + '<div class="absolute inset-0 overflow-y-auto transition duration-300 ease-out" :class="stack.length ? \'-translate-x-1/4 opacity-0\' : \'translate-x-0 opacity-100\'" :inert="stack.length > 0">'
+                + root + '</div>' + levels + '</div>';
+        };
+
+        /*
          * Desktop main menu bar (Views/Shared/Components/MainMenu/Default.cshtml): when the top-level items need more
          * than one row, "compact" drops their icons and tightens the spacing (see _NopwaraMenuLink.cshtml)
          */
         window.Alpine.data('nopwaraMenuFit', function () {
             return {
-                compact: false,
+                //the first decision is made inline right after the bar (MainMenu/Default.cshtml); this follows window resizes
                 init: function () {
-                    var self = this;
+                    var bar = this.$el;
                     var fit = function () {
-                        self.compact = false;
-                        self.$nextTick(function () {
-                            var tops = Array.prototype.map.call(self.$el.children, function (li) { return li.offsetTop; });
-                            self.compact = new Set(tops).size > 1;
-                        });
+                        bar.classList.remove('menu--compact');
+                        var tops = Array.prototype.map.call(bar.children, function (li) { return li.offsetTop; });
+                        if (new Set(tops).size > 1)
+                            bar.classList.add('menu--compact');
                     };
                     var timer;
                     window.addEventListener('resize', function () {
                         clearTimeout(timer);
                         timer = setTimeout(fit, 150);
                     });
-                    fit();
                 }
             };
         });
 
         /*
-         * Mobile main menu (Views/Shared/Components/MainMenu/_NopwaraMobileMenu.cshtml): a stack of open levels.
+         * Mobile main menu (built by nopwaraBuildMobileMenu): a stack of open levels.
          * Each level is a panel that slides in from the right; the header drawer's "mobileOpen" closes it all.
          */
         window.Alpine.data('nopwaraMobileMenu', function () {

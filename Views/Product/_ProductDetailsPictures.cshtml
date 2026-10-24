@@ -41,16 +41,16 @@
                @@click.prevent="openLightbox()"
                class="group/zoom flex size-full cursor-zoom-in items-center justify-center">
                 <img alt="@Model.DefaultPictureModel.AlternateText" src="@Model.DefaultPictureModel.ImageUrl" title="@Model.DefaultPictureModel.Title"
-                     id="main-product-img-@Model.Id" x-ref="main" class="max-h-full max-w-full object-contain" />
+                     id="main-product-img-@Model.Id" x-ref="main" fetchpriority="high" decoding="async" class="max-h-full max-w-full object-contain" />
                 <span class="absolute bottom-3 right-3 rounded-full bg-white/90 p-2 text-slate-600 opacity-0 shadow transition group-hover/zoom:opacity-100" aria-hidden="true">
-                    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607ZM10.5 7.5v6m3-3h-6" /></svg>
+                    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-190d56" /></svg>
                 </span>
             </a>
         }
         else
         {
             <img alt="@Model.DefaultPictureModel.AlternateText" src="@Model.DefaultPictureModel.ImageUrl" title="@Model.DefaultPictureModel.Title"
-                 id="main-product-img-@Model.Id" x-ref="main" x-show="!show3d" class="max-h-full max-w-full object-contain" />
+                 id="main-product-img-@Model.Id" x-ref="main" fetchpriority="high" decoding="async" x-show="!show3d" class="max-h-full max-w-full object-contain" />
         }
 
         @if (has3d)
@@ -96,17 +96,17 @@
             <img :src="lightboxSrc" alt="@Model.DefaultPictureModel.AlternateText" class="max-h-[90vh] max-w-full rounded object-contain" />
             <button type="button" class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20" @@click="lightbox = false" title="@T("Media.MagnificPopup.Close")">
                 <span class="sr-only">@T("Media.MagnificPopup.Close")</span>
-                <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-93ec04" /></svg>
             </button>
             @if (Model.PictureModels.Count > 1)
             {
                 <button type="button" class="@navButtonCss left-4" @@click="step(-1)" title="@T("Media.MagnificPopup.Previous")">
                     <span class="sr-only">@T("Media.MagnificPopup.Previous")</span>
-                    <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                    <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-34104a" /></svg>
                 </button>
                 <button type="button" class="@navButtonCss right-4" @@click="step(1)" title="@T("Media.MagnificPopup.Next")">
                     <span class="sr-only">@T("Media.MagnificPopup.Next")</span>
-                    <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-ae0c6e" /></svg>
                 </button>
                 <p class="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-white/70" x-text="(lightboxIndex + 1) + ' / ' + pictures.length"></p>
             }
