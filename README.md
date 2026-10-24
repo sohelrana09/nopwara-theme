@@ -8,11 +8,15 @@ A lightweight storefront theme for nopCommerce 5.00 (use the `nop-4.90` branch f
   - header with the main menu (hover dropdowns on desktop, slide-in levels on mobile), account links, search and flyout cart (with a Checkout button);
   - footer, one- and two-column layouts;
   - toast notifications instead of the core notification bar.
+- **Home page:**
+  - featured products and bestsellers as swipeable carousels (CSS scroll snapping, no slider library);
+  - a trust strip built from the store's settings: free delivery (only with "free shipping over X"), returns (only with return requests on), secure checkout and customer support. Hide it with `nopwarathemesettings.showtruststrip = false`.
 - **Catalog:**
   - ajax layered navigation with filter chips and "Clear all", plus back/forward history that restores the filters, sort and page size;
   - a dual-handle price range slider;
   - long filter lists collapse after six values;
-  - a "Show more products" button that loads the next page.
+  - a "Show more products" button that loads the next page;
+  - product cards with ribbons: the saving against the old price ("-20%") and "New" for products marked as new.
 - **Product page (simple and grouped):**
   - gallery with thumbnails, hover zoom on desktop and a pinch / double-tap zoom lightbox;
   - tabs for description, specifications and reviews;

@@ -31,6 +31,14 @@
     //first cards of a grid are above the fold: load them at once (the first two with high priority), the rest lazily
     var index = ViewData["NopwaraIndex"] as int? ?? int.MaxValue;
     var thumbSize = mediaSettings.ProductThumbPictureSize;
+
+    //ribbons: the saving against the old price (catalog discounts or "old price"), and products marked as new
+    var oldPrice = Model.ProductPrice.OldPriceValue ?? 0;
+    var price = Model.ProductPrice.PriceValue ?? 0;
+    var savingPercent = oldPrice > 0 && price > 0 && price < oldPrice ? (int)Math.Round((oldPrice - price) / oldPrice * 100) : 0;
+    var newText = Model.MarkAsNew
+        ? await NopwaraLocalization.GetResourceAsync("Nopwara.Ribbon.New", (await NopwaraWorkContext.GetWorkingLanguageAsync()).Id, logIfNotFound: false, defaultValue: "New")
+        : null;
 }
 <article class="product-item nw-card group/card" data-productid="@Model.Id">
     <div class="picture relative bg-white in-[.product-list]:w-36 in-[.product-list]:shrink-0 sm:in-[.product-list]:w-56">
@@ -79,6 +87,20 @@
                      loading="@(index < 4 ? "eager" : "lazy")" fetchpriority="@(index < 2 ? "high" : null)"
                      class="h-auto max-h-full w-auto max-w-full object-contain transition-transform duration-300 group-hover/card:scale-105" />
             </a>
+        }
+
+        @if (savingPercent > 0 || newText != null)
+        {
+            <div class="product-ribbons pointer-events-none absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
+                @if (savingPercent > 0)
+                {
+                    <span class="nw-ribbon ribbon-sale bg-red-600 text-white">-@savingPercent%</span>
+                }
+                @if (newText != null)
+                {
+                    <span class="nw-ribbon ribbon-new bg-primary-600 text-white">@newText</span>
+                }
+            </div>
         }
 
         @*secondary actions float over the picture so "Add to cart" keeps the full card width*@
