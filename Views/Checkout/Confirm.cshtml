@@ -1,0 +1,92 @@
+@*Nopwara: core view with its scripts rewritten without jQuery (Content/js/nopwara-checkout-address.js for the address objects)*@
+@model CheckoutConfirmModel
+
+@{
+    Layout = "_ColumnsOne";
+
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.Checkout").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-checkout-page");
+    NopHtml.AppendPageCssClassParts("html-order-confirm-page");
+}
+<div class="page checkout-page order-confirm-page">
+    @await Component.InvokeAsync(typeof(CheckoutProgressViewComponent), new { step = CheckoutProgressStep.Confirm })
+    <div class="page-title">
+        <h1>@T("Checkout.ConfirmYourOrder")</h1>
+    </div>
+    <div class="page-body checkout-data">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutConfirmTop, additionalData = Model })
+        <div class="section confirm-order">
+            <form asp-route="@NopRouteNames.Standard.CHECKOUT_CONFIRM" method="post" id="confirm-order-form">
+                <script asp-location="Footer">
+                    nw.ready(function() {
+                        document.querySelector('.confirm-order-next-step-button')?.addEventListener('click', function (e) {
+                            //terms of service
+                            var terms = document.getElementById('termsofservice');
+                            if (terms && !terms.checked) {
+                                e.preventDefault();
+                                var warning = document.getElementById('terms-of-service-warning-box');
+                                nw.dialog({ html: warning.innerHTML, title: warning.title, className: 'warning', width: 380 });
+                            }
+                        });
+                    });
+                </script>
+                @if (!string.IsNullOrEmpty(Model.MinOrderTotalWarning))
+                {
+                    <span class="min-order-warning">@Model.MinOrderTotalWarning</span>
+                }
+                else
+                {
+                    if (Model.TermsOfServiceOnOrderConfirmPage)
+                    {
+                        <div id="terms-of-service-warning-box" title="@T("Checkout.TermsOfService")" style="display: none;">
+                            <p>@T("Checkout.TermsOfService.PleaseAccept")</p>
+                        </div>
+                        <div class="terms-of-service">
+                            <input id="termsofservice" type="checkbox" name="termsofservice" />
+                            <label for="termsofservice">@T("Checkout.TermsOfService.IAccept")</label>
+                            @if (Model.TermsOfServicePopup)
+                            {
+                                <a class="read" id="read-terms" href="#" onclick="nw.dialog({ url: '@Url.RouteUrl(NopRouteNames.Ajax.TOPIC_POPUP, new { SystemName = "conditionsofuse" })', title: '@T("Checkout.TermsOfService")' }); return false;">@T("Checkout.TermsOfService.Read")</a>
+                            }
+                            else
+                            {
+                                <a class="read" id="read-terms" href="@await NopUrl.RouteTopicUrlAsync("conditionsofuse")">@T("Checkout.TermsOfService.Read")</a>
+                            }
+                        </div>
+                    }
+                    <div class="buttons">
+                        <button type="submit" name="nextstep" class="button-1 confirm-order-next-step-button">@T("Checkout.ConfirmButton")</button>
+                    </div>
+                    <script asp-location="Footer">
+                        document.getElementById('confirm-order-form').addEventListener('submit', function (e) {
+                            if (e.defaultPrevented) return;
+                            var button = this.querySelector('button[type="submit"][name="nextstep"]');
+                            setTimeout(function () { if (button) button.disabled = true; }, 0);
+                        });
+                    </script>
+                    if (Model.DisplayCaptcha)
+                    {
+                        <nop-captcha />
+                    }
+                }
+                @if (Model.Warnings.Count > 0)
+                {
+                    <div class="message-error">
+                        <ul>
+                            @foreach (var warning in Model.Warnings)
+                            {
+                                <li>@warning</li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </form>
+        </div>
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutConfirmBottom, additionalData = Model })
+        <div class="section order-summary">
+            @await Component.InvokeAsync(typeof(OrderSummaryViewComponent), new { prepareAndDisplayOrderReviewData = true })
+        </div>
+    </div>
+</div>

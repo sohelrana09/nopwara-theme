@@ -1,24 +1,12 @@
 /*
- * Nopwara theme scripts.
- * Must load before alpine.min.js (for "alpine:init") and before jQuery (so our DOMContentLoaded
- * handler runs before jQuery ready callbacks); see Views/Shared/Head.cshtml.
+ * Nopwara theme scripts (Alpine components, product attribute checks, menus). No jQuery: requests, dialogs, cart and
+ * validation are in nopwara-core.js, which renders first. Must load before alpine.min.js (for "alpine:init");
+ * see Views/Shared/Head.cshtml.
  */
 (function () {
     'use strict';
 
     var MAX_TOASTS = 3;
-
-    // Drop-in replacement for core displayBarNotification(message, messagetype, timeout)
-    function nopwaraBarNotification(message, messagetype, timeout) {
-        var messages = typeof message === 'string' ? [message] : (message || []);
-        if (messages.length === 0)
-            return;
-
-        var type = ['success', 'error', 'warning'].indexOf(messagetype) !== -1 ? messagetype : 'success';
-        window.dispatchEvent(new CustomEvent('nopwara:notify', {
-            detail: { messages: messages, type: type, timeout: timeout > 0 ? timeout : 0 }
-        }));
-    }
 
     /*
      * Required product attributes are checked in the browser before "Add to cart" / "Add to wishlist" posts
@@ -110,43 +98,15 @@
         var control = first.querySelector('select, input:not([type=hidden]), textarea');
         if (control)
             control.focus({ preventScroll: true });
-        nopwaraBarNotification(messages, 'error', 0);
+        window.nw.notify(messages, 'error', 0);
 
         return false;
     }
 
-    function guardAddToCart() {
-        var cart = window.AjaxCart;
-        if (!cart || cart.nopwaraAttributeCheck)
-            return;
-        cart.nopwaraAttributeCheck = true;
-
-        var addFromDetails = cart.addproducttocart_details;
-        cart.addproducttocart_details = function (url, formselector) {
-            var form = window.jQuery ? window.jQuery(formselector)[0] : document.querySelector(formselector);
-            if (!validateAttributes(form))
-                return;
-
-            return addFromDetails.apply(this, arguments);
-        };
-    }
-
-    //used by plugins that post the product form themselves (Misc.NopwaraCheckout "Buy now")
+    //used by nw.cart.details and by plugins that post the product form themselves (Misc.NopwaraCheckout "Buy now")
     window.nopwaraValidateProductAttributes = validateAttributes;
 
-    // public.common.js / public.ajaxcart.js (loaded after this file) define displayBarNotification and AjaxCart; adjust them once all scripts ran
-    document.addEventListener('DOMContentLoaded', function () {
-        window.displayBarNotification = nopwaraBarNotification;
-        guardAddToCart();
-    });
-
     document.addEventListener('alpine:init', function () {
-        /*
-         * Product details gallery (Views/Product/_ProductDetailsPictures.cshtml).
-         * The main <img> and lightbox anchor keep their core ids because the core attribute-change
-         * handler (_ProductAttributes.cshtml) rewrites their src/href directly with jQuery,
-         * so this component updates the DOM imperatively instead of binding :src.
-         */
         /*
          * Header search box (Views/Shared/Components/SearchBox/Default.cshtml): submit (minimum length, category → advanced
          * search) and core's autocomplete as a fallback when the Nopwara instant search plugin isn't active.
@@ -231,6 +191,11 @@
             };
         });
 
+        /*
+         * Product details gallery (Views/Product/_ProductDetailsPictures.cshtml). The main <img> and lightbox anchor keep
+         * their core ids (quick view and plugins look them up), so the component sets src/href itself instead of binding :src;
+         * attribute combinations send their picture with the nopwara:picture event (nw.attributeChange).
+         */
         window.Alpine.data('nopwaraGallery', function (dataElementId, zoomEnabled) {
             var ZOOM = 2.5, MAX_ZOOM = 4;
             return {

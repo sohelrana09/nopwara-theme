@@ -1,0 +1,44 @@
+﻿<script asp-location="Footer">
+    nw.ready(function () {
+        var button = document.getElementById('check-availability-button');
+        var username = document.getElementById('Username');
+        if (!button || !username)
+            return;
+        var status = document.createElement('span');
+        status.id = 'username-availabilty';
+        button.before(status);
+        var progress = function (show) {
+            var el = document.getElementById('availability-check-progress');
+            if (el)
+                el.style.display = show ? '' : 'none';
+        };
+        username.addEventListener('keydown', function () {
+            status.textContent = '';
+        });
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
+            status.textContent = '';
+            if (username.value.length > 0) {
+                progress(true);
+                button.disabled = true;
+                nw.post('@Url.RouteUrl(NopRouteNames.Ajax.CHECK_USERNAME_AVAILABILITY)', { Username: username.value })
+                    .then(function (data) {
+                        progress(false);
+                        status.className = data.Available ? 'username-available-status' : 'username-not-available-status';
+                        status.textContent = data.Text;
+                    })
+                    .catch(function () {
+                        progress(false);
+                    })
+                    .finally(function () {
+                        button.disabled = false;
+                    });
+            } else {
+                status.className = 'username-not-available-status';
+                status.textContent = '@T("Account.CheckUsernameAvailability.EnterUsername")';
+            }
+        });
+    });
+</script>
+<button type="button" id="check-availability-button" class="button-2 check-username-availability-button">@T("Account.CheckUsernameAvailability.Button")</button>
+<span id="availability-check-progress" style="display: none;" class="please-wait">@T("Common.Wait")</span>

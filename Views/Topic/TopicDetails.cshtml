@@ -1,0 +1,99 @@
+﻿@model TopicModel
+
+@using Nop.Core
+@using Nop.Core.Domain.Seo
+@using Nop.Core.Domain.Topics
+
+@inject IWebHelper webHelper
+@inject SeoSettings seoSettings
+
+@{
+    var isPopup = ViewBag.IsPopup ?? false;
+
+    if (!isPopup)
+    {
+        Layout = "_ColumnsOne";
+    }
+
+    if (!Model.IsPasswordProtected)
+    {
+        //title
+        NopHtml.AddTitleParts(!string.IsNullOrEmpty(Model.MetaTitle) ? Model.MetaTitle : Model.Title);
+        //meta
+        NopHtml.AddMetaDescriptionParts(Model.MetaDescription);
+        NopHtml.AddMetaKeywordParts(Model.MetaKeywords);
+    }
+
+    if (seoSettings.CanonicalUrlsEnabled)
+    {
+        var topicUrl = (await NopUrl.RouteGenericUrlAsync<Topic>(new { SeName = Model.SeName }, webHelper.GetCurrentRequestProtocol())).ToLowerInvariant();
+        NopHtml.AddCanonicalUrlParts(topicUrl, seoSettings.QueryStringInCanonicalUrlsEnabled);
+    }
+
+    //page class
+    NopHtml.AppendPageCssClassParts("html-topic-page");
+}
+@if (Model.IsPasswordProtected)
+{
+    <script asp-location="Footer">
+        nw.ready(function () {
+            var topic = document.getElementById('ph-topic');
+            var passwordBlock = document.getElementById('ph-password');
+            var password = document.getElementById('password');
+            var error = document.getElementById('password-error');
+
+            topic.style.display = 'none';
+            password.select();
+            password.focus();
+
+            document.getElementById('button-password').addEventListener('click', function (e) {
+                e.preventDefault();
+                nw.post('@Url.RouteUrl(NopRouteNames.Ajax.TOPIC_AUTHENTICATE)', {
+                    id: document.getElementById('topic-@Model.Id').value,
+                    password: password.value
+                }).then(function (data) {
+                    if (data.Authenticated) {
+                        var title = topic.querySelector('#ph-title h1');
+                        title.innerHTML = data.Title;
+                        if (title.textContent.length == 0) {
+                            document.getElementById('ph-title').style.display = 'none';
+                        }
+                        //injected forms are validated by the theme runtime without re-parsing
+                        nw.html(topic.querySelector('.page-body'), data.Body);
+                        passwordBlock.style.display = 'none';
+                        topic.style.display = '';
+                    }
+                    else {
+                        error.textContent = data.Error;
+                        error.style.display = '';
+                        password.select();
+                        password.focus();
+                    }
+                });
+            });
+        });
+    </script>
+    <div class="topic-password" id="ph-password">
+        <form asp-route="@NopRouteNames.Ajax.TOPIC_AUTHENTICATE" method="post" autocomplete="off">
+            <input asp-for="Id" id="topic-@Model.Id" type="hidden" />
+            <label for="password" class="enter-password-title">
+                @T("Topic.EnterPassword")
+            </label>
+            <div class="enter-password-form">
+                <input name="password" id="password" type="password" />
+                <button type="submit" id="button-password" class="button-1 topic-password-button">@T("Topic.Button")</button>
+            </div>
+            <div class="password-error" id="password-error" style="display: none;"></div>
+        </form>
+    </div>
+}
+<div class="page topic-page" id="ph-topic">
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CustomerTopicDetailsTop, additionalData = Model })
+    <div class="page-title" id="ph-title">
+        <h1>@Model.Title</h1>
+    </div>
+    <div class="page-body">
+        @Html.Raw(Model.Body)
+    </div>
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CustomerTopicDetailsBottom, additionalData = Model })
+</div>

@@ -9,7 +9,7 @@
  */
 (function () {
   const nw = window.nw;
-  const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+  const all = (selector) => Array.from(document.querySelectorAll(selector));
   let started = false;
 
   function currentUrl() {
@@ -23,7 +23,7 @@
   //---------- standard controls
 
   function selected(selector, attribute) {
-    return $$(selector + ':checked').map((el) => el.getAttribute(attribute));
+    return all(selector + ':checked').map((el) => el.getAttribute(attribute));
   }
 
   function wireControls(catalog) {
@@ -44,7 +44,7 @@
     nw.on('click', '[data-viewmode]', (e, el) => {
       e.preventDefault();
       if (el.classList.contains('selected')) return;
-      $$('[data-viewmode]').forEach((mode) => mode.classList.toggle('selected', mode === el));
+      all('[data-viewmode]').forEach((mode) => mode.classList.toggle('selected', mode === el));
       catalog.getProducts();
     });
     nw.on('change', '#products-orderby, #products-pagesize, [data-option-id], [data-manufacturer-id]', () => catalog.getProducts());
@@ -88,8 +88,8 @@
   }
 
   function restore(catalog, state) {
-    $$('[data-option-id]').forEach((el) => { el.checked = state.specs.includes(el.getAttribute('data-option-id')); });
-    $$('[data-manufacturer-id]').forEach((el) => { el.checked = state.ms.includes(el.getAttribute('data-manufacturer-id')); });
+    all('[data-option-id]').forEach((el) => { el.checked = state.specs.includes(el.getAttribute('data-option-id')); });
+    all('[data-manufacturer-id]').forEach((el) => { el.checked = state.ms.includes(el.getAttribute('data-manufacturer-id')); });
     //the price component may not have been initialized when the first entry was saved: fall back to the entry's URL
     window.dispatchEvent(new CustomEvent('nopwara:price-set', { detail: state.price || stateFromUrl().price }));
 
@@ -97,7 +97,7 @@
     if (orderBy && state.orderby != null) orderBy.value = state.orderby;
     const pageSize = document.getElementById('products-pagesize');
     if (pageSize && state.pagesize != null) pageSize.value = state.pagesize;
-    if (state.viewmode != null) $$('[data-viewmode]').forEach((el) => el.classList.toggle('selected', el.dataset.viewmode === state.viewmode));
+    if (state.viewmode != null) all('[data-viewmode]').forEach((el) => el.classList.toggle('selected', el.dataset.viewmode === state.viewmode));
 
     catalog.nopwaraRestoring = true;
     try {
@@ -127,7 +127,7 @@
 
   function initLoadMore(catalog) {
     const label = document.querySelector('.products-container')?.dataset.loadMoreText || 'Show more';
-    const setLabels = () => $$('[data-load-more-label]').forEach((el) => { el.textContent = label; });
+    const setLabels = () => all('[data-load-more-label]').forEach((el) => { el.textContent = label; });
     setLabels();
     catalog.on('loaded', setLabels);
 
@@ -223,12 +223,12 @@
       refresh() {
         const chips = [];
 
-        $$('[data-option-id]:checked').forEach((input) => {
+        all('[data-option-id]:checked').forEach((input) => {
           const group = input.closest('.product-spec-group')?.querySelector('.name')?.textContent.trim();
           chips.push({ key: 'spec-' + input.dataset.optionId, label: (group ? group + ': ' : '') + this.labelFor(input), input });
         });
 
-        $$('[data-manufacturer-id]:checked').forEach((input) => {
+        all('[data-manufacturer-id]:checked').forEach((input) => {
           chips.push({ key: 'ms-' + input.dataset.manufacturerId, label: this.labelFor(input), input });
         });
 

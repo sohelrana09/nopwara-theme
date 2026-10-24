@@ -105,6 +105,16 @@
   .nw-dialog.success .nw-dialog-body { @apply text-emerald-800; }
   .nw-dialog.error .nw-dialog-body { @apply text-red-700; }
   .nw-dialog.warning .nw-dialog-body { @apply text-amber-800; }
+  /* tabs on the profile and private messages pages (core markup, Alpine nwTabs instead of jQuery UI tabs) */
+  .inbox-tabs > ul {
+    @apply mb-4 flex gap-1 border-b border-slate-200;
+  }
+  .inbox-tabs > ul > li > a {
+    @apply -mb-px block border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-800;
+  }
+  .inbox-tabs > ul > li.ui-tabs-active > a {
+    @apply border-primary-600 text-primary-700;
+  }
   /* mobile menu: root items, child links, children with their own level */
   .nw-mtop {
     @apply flex w-full items-center gap-1.5 px-4 py-3.5 text-left text-base font-semibold text-slate-800 hover:bg-slate-50;

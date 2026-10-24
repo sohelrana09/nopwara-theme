@@ -1,0 +1,30 @@
+﻿@model int
+
+<div id="addWishlistModal_@Model" title="@T("Wishlist.AddNewWishlist")" style="display:none;">
+    <div class="add-wishlist-content">
+        <input type="text" id="wishlistName_@Model" placeholder="@T("Wishlist.EnterWishlistName")" />
+        <button type="button" class="wishlist-add-custom-button" onclick="addWishlist(@Model)">@T("Common.OK")</button>
+    </div>
+</div>
+
+<script asp-location="Footer">
+    //core's UI dialog widget replaced by nw.elementDialog (Content/js/nopwara-core.js)
+    function showAddWishlistModal(productId) {
+        nw.elementDialog.show('addWishlistModal_' + productId);
+    }
+
+    function closeAddWishlistModal(productId) {
+        nw.elementDialog.close('addWishlistModal_' + productId);
+    }
+
+    function addWishlist(productId) {
+        const wishlistName = document.getElementById('wishlistName_' + productId).value;
+        if (!wishlistName) {
+            alert('@T("Wishlist.NameRequired")');
+            return;
+        }
+
+        nw.cart.createCustomWishlist('@Url.RouteUrl(NopRouteNames.Ajax.ADD_WISHLIST)', wishlistName, productId);
+        closeAddWishlistModal(productId);
+    }
+</script>

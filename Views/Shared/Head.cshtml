@@ -28,12 +28,11 @@
     //runtime (requests, validation, dialogs, cart, catalog): appended last so it renders before every other script
     NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/nopwara-core.js");
 
-    //keep vendor CSS needed by core views that are not overridden yet
+    //product box picture sliders (Swiper, no jQuery)
     if (catalogSettings.DisplayAllPicturesOnCatalogPages)
     {
         NopHtml.AppendCssFileParts("~/lib_npm/swiper/swiper-bundle.min.css");
     }
-    //jQuery UI CSS comes with jQuery UI, on demand (Content/js/nopwara-jqueryui.js)
 
     //home page slider (core Widgets.Swiper): it lazy-loads its slides, so the first slide (usually the largest element, LCP)
     //is preloaded, and its height is reserved from the start (no layout shift) with nopwarathemesettings.sliderratio
@@ -81,4 +80,3 @@
   }]
 }
 </script>
-<script asp-location="Head">window.nopwaraJqueryUi = { js: '@Url.Content("~/lib_npm/jquery-ui-dist/jquery-ui.min.js")', css: '@Url.Content("~/lib_npm/jquery-ui-dist/jquery-ui.min.css")' };</script>

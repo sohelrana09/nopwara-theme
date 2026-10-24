@@ -1,0 +1,30 @@
+﻿@model PrivateMessageIndexModel
+@{    
+    Layout = "_ColumnsOne";
+
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.PrivateMessages").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-private-messages");
+    NopHtml.AppendPageCssClassParts("html-private-messages-page");
+}
+<div class="page private-messages private-messages-page">
+    <div class="page-title">
+        <h1>@T("PrivateMessages.PrivateMessages")</h1>
+    </div>
+    <div class="page-body">
+        @* core's UI tabs widget replaced by the theme's Alpine "nwTabs" component; the sent items tab opens first when the server says so *@
+        <div class="tabs inbox-tabs" id="tabs" x-data="nwTabs">
+            <ul class="tabs-header" role="tablist">
+                <li role="presentation" :class="{ 'ui-tabs-active ui-state-active': tab === 'tabs-1' }"><a href="#tabs-1" role="tab" data-nw-tab="tabs-1" @@click.prevent="tab = 'tabs-1'" :aria-selected="tab === 'tabs-1'">@T("PrivateMessages.Inbox")</a></li>
+                <li role="presentation" :class="{ 'ui-tabs-active ui-state-active': tab === 'tabs-2' }"><a href="#tabs-2" role="tab" data-nw-tab="tabs-2" @(Model.SentItemsTabSelected ? Html.Raw("data-nw-active") : null) @@click.prevent="tab = 'tabs-2'" :aria-selected="tab === 'tabs-2'">@T("PrivateMessages.SentItems")</a></li>
+            </ul>
+            <div id="tabs-1" class="tab-content" role="tabpanel" x-show="tab === 'tabs-1'" @(Model.SentItemsTabSelected ? Html.Raw("style=\"display:none\"") : null)>
+                @await Component.InvokeAsync(typeof(PrivateMessagesInboxViewComponent), new { pageNumber = Model.InboxPage, tab = "inbox" })
+            </div>
+            <div id="tabs-2" class="tab-content" role="tabpanel" x-show="tab === 'tabs-2'" @(Model.SentItemsTabSelected ? null : Html.Raw("style=\"display:none\""))>
+                @await Component.InvokeAsync(typeof(PrivateMessagesSentItemsViewComponent), new { pageNumber = Model.SentItemsPage, tab = "sent" })
+            </div>
+        </div>
+    </div>
+</div>
