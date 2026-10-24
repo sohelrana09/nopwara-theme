@@ -1,0 +1,26 @@
+@*
+    Pager for the Alpine "nwPager" component (Content/js/nopwara-core.js): rendered inside its x-data, hidden with one page.
+    Used by product reviews; texts are Nopwara.Pager.* resources with English fallbacks.
+*@
+@{
+    var languageId = (await NopwaraWorkContext.GetWorkingLanguageAsync()).Id;
+    async Task<string> Text(string key, string fallback) => await NopwaraLocalization.GetResourceAsync(key, languageId, logIfNotFound: false, defaultValue: fallback);
+    var shownText = await Text("Nopwara.Pager.Shown", "{0}–{1} of {2}");
+    const string buttonCss = "inline-flex min-w-9 items-center justify-center rounded-md border px-2.5 py-1.5 text-sm font-medium transition disabled:pointer-events-none disabled:opacity-40";
+}
+<nav class="nw-pager mt-6 flex flex-wrap items-center justify-between gap-3" x-show="pages > 1" x-cloak aria-label="@await Text("Nopwara.Pager.Label", "Pages")">
+    <p class="text-sm text-slate-500" x-text="'@JavaScriptEncoder.Default.Encode(shownText)'.replace('{0}', from).replace('{1}', to).replace('{2}', items.length)"></p>
+    <div class="flex items-center gap-1">
+        <button type="button" class="@buttonCss border-slate-200 bg-white text-slate-600 hover:bg-slate-50" :disabled="page === 1" @@click="go(page - 1)" aria-label="@await Text("Nopwara.Pager.Previous", "Previous")">
+            <svg class="size-4 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+        </button>
+        <template x-for="n in numbers" :key="n">
+            <button type="button" class="@buttonCss" x-text="n" @@click="go(n)"
+                    :aria-current="n === page ? 'page' : null"
+                    :class="n === page ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'"></button>
+        </template>
+        <button type="button" class="@buttonCss border-slate-200 bg-white text-slate-600 hover:bg-slate-50" :disabled="page === pages" @@click="go(page + 1)" aria-label="@await Text("Nopwara.Pager.Next", "Next")">
+            <svg class="size-4 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+        </button>
+    </div>
+</nav>
