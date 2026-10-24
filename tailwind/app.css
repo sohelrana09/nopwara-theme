@@ -193,9 +193,11 @@
   .product-list .item-grid {
     @apply grid gap-4;
   }
-  /* product carousel (_NopwaraProductCarousel): one snapping row, 2 / 3 / 4 cards visible, scrollbar hidden */
+  /* product carousel (_NopwaraProductCarousel): one snapping row, 2 / 3 / 4 cards visible, scrollbar hidden.
+     relative: absolutely positioned bits of the cards (e.g. .sr-only labels) must be clipped by the row; positioned against
+     <body> they would sit past the right edge and widen the whole page (an extra scrollbar) */
   .product-grid .item-grid.nw-carousel {
-    @apply -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-1 pb-2 [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden;
+    @apply relative -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-1 pb-2 [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden;
   }
   .nw-carousel > .item-box {
     @apply w-[calc((100%-0.75rem)/2)] shrink-0 snap-start sm:w-[calc((100%-2rem)/3)] xl:w-[calc((100%-3rem)/4)];
