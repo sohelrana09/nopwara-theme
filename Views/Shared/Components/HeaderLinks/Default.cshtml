@@ -93,21 +93,17 @@
     {
         //new private message notification
         <script asp-location="Footer">
-            $(function() {
+            nw.ready(function () {
                 displayPopupNotification('@Html.Raw(JavaScriptEncoder.Default.Encode(Model.AlertMessage))', 'success', false);
             });
         </script>
     }
     @if (Model.ShoppingCartEnabled)
     {
-        @*flyout open/close is handled by Alpine on #topcartlink; AjaxCart still updates the quantities and flyout HTML*@
+        @*flyout open/close is handled by Alpine on #topcartlink; nw.cart (Content/js/nopwara-core.js) updates the quantities and flyout HTML*@
         <script asp-location="Footer">
-            $(function() {
-                var localized_data = {
-                    AjaxCartFailure: "@T("AjaxCart.Failure")"
-                };
-
-                AjaxCart.init(@Model.UsePopupNotifications.ToString().ToLowerInvariant(), '.header-links .cart-qty', '.header-links .wishlist-qty', '#flyout-cart', localized_data);
+            nw.cart.init(@Model.UsePopupNotifications.ToString().ToLowerInvariant(), '.header-links .cart-qty', '.header-links .wishlist-qty', '#flyout-cart', {
+                AjaxCartFailure: "@T("AjaxCart.Failure")"
             });
         </script>
     }

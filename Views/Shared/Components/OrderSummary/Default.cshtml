@@ -100,22 +100,9 @@
                                 <label for="termsofservice">@T("Checkout.TermsOfService.IAccept")</label>
                                 @if (Model.TermsOfServicePopup)
                                 {
-                                    <a class="read col-start-2 cursor-pointer font-medium" id="read-terms" role="button" tabindex="0">@T("Checkout.TermsOfService.Read")</a>
-                                    <script asp-location="Footer">
-                                        $(function() {
-                                            $('#read-terms').on('click keyup', function(e) {
-                                                e.preventDefault();
-
-                                                if (e.type == 'click' || (e.type == 'keydown' && e.key === 'Enter'))
-                                                {
-                                                    $(this).trigger("blur");
-                                                    displayPopupContentFromUrl(
-                                                        '@Url.RouteUrl(NopRouteNames.Ajax.TOPIC_POPUP, new { SystemName = "conditionsofuse" })',
-                                                        '@T("Checkout.TermsOfService")');
-                                                }
-                                            });
-                                        });
-                                    </script>
+                                    <a class="read col-start-2 cursor-pointer font-medium" id="read-terms" role="button" tabindex="0"
+                                       onclick="nw.dialog({ url: '@Url.RouteUrl(NopRouteNames.Ajax.TOPIC_POPUP, new { SystemName = "conditionsofuse" })', title: '@T("Checkout.TermsOfService")' });return false;"
+                                       onkeydown="if (event.key === 'Enter') { this.click(); return false; }">@T("Checkout.TermsOfService.Read")</a>
                                 }
                                 else
                                 {
@@ -126,24 +113,6 @@
                         <div class="checkout-buttons">
                             @if (string.IsNullOrEmpty(Model.MinOrderSubtotalWarning) && !Model.HideCheckoutButton)
                             {
-                                <script asp-location="Footer">
-                                    $(function() {
-                                        $('#checkout').on('click', function () {
-                                            //terms of service
-                                            var termOfServiceOk = true;
-                                            if ($('#termsofservice').length > 0) {
-                                                //terms of service element exists
-                                                if (!$('#termsofservice').is(':checked')) {
-                                                    $("#terms-of-service-warning-box").dialog();
-                                                    termOfServiceOk = false;
-                                                } else {
-                                                    termOfServiceOk = true;
-                                                }
-                                            }
-                                            return termOfServiceOk;
-                                        });
-                                    });
-                                </script>
                                 if (orderSettings.CheckoutDisabled)
                                 {
                                     <div class="checkout-disabled rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -152,7 +121,9 @@
                                 }
                                 else
                                 {
-                                    <button type="submit" id="checkout" name="checkout" value="checkout" class="button-1 checkout-button btn btn-primary w-full py-3 text-base">
+                                    <button type="submit" id="checkout" name="checkout" value="checkout"
+                                            onclick="var terms = document.getElementById('termsofservice'); if (terms && !terms.checked) { nw.dialog({ html: document.getElementById('terms-of-service-warning-box').innerHTML, className: 'warning', width: 380 }); return false; }"
+                                            class="button-1 checkout-button btn btn-primary w-full py-3 text-base">
                                         @T("Checkout.Button")
                                         <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-b06737" /></svg>
                                     </button>

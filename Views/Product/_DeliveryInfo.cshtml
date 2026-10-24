@@ -1,0 +1,26 @@
+@model ProductDetailsModel
+@*Nopwara: core view; the free-shipping label follows attribute changes through the nopwara:attributes-changed event (no jQuery)*@
+@if (Model.FreeShippingNotificationEnabled && Model.IsFreeShipping || !string.IsNullOrWhiteSpace(Model.DeliveryDate))
+{
+    <div class="delivery">
+        <script asp-location="Footer">
+            window.addEventListener('nopwara:attributes-changed', function (e) {
+                var label = document.getElementById('free-shipping-' + e.detail.productId);
+                if (label)
+                    label.classList.toggle('invisible', !e.detail.data.isFreeShipping);
+            });
+        </script>
+
+        @if (Model.FreeShippingNotificationEnabled && Model.IsFreeShipping)
+        {
+            <div id="free-shipping-@Model.Id" class="free-shipping">@T("Products.FreeShipping")</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.DeliveryDate))
+        {
+            <div class="delivery-date">
+                <span class="label">@T("Products.DeliveryDate"):</span>
+                <span class="value">@Model.DeliveryDate</span>
+            </div>
+        }
+    </div>
+}

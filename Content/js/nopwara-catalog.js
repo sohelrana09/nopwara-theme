@@ -1,20 +1,16 @@
 /*
- * Nopwara catalog navigation: extends core CatalogProducts (wwwroot/js/public.catalogproducts.js).
+ * Nopwara catalog navigation on nw.catalog (Content/js/nopwara-core.js), no jQuery:
+ *  - the standard controls (view mode, sort, page size, pager, specification and manufacturer filters) are wired here
+ *    from their markup, so the views carry no scripts
  *  - filter changes push browser history, Back/Forward restore filters + products
- *  - "load more" appends the next page
+ *  - "show more" appends the next page
  *  - Alpine components: nopwaraPriceRange (filter), nopwaraActiveFilters (chips)
- * Loaded globally from Head.cshtml (before Alpine); does nothing on pages without CatalogProducts.
+ * Starts on pages that render .products-container[data-catalog] (Views/Catalog/_CatalogProducts.cshtml).
  */
 (function () {
-  //run after every footer script (jQuery, CatalogProducts and the filter hooks) is loaded
-  function onReady(fn) {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
-    else fn();
-  }
-
-  function catalog() {
-    return window.jQuery && window.CatalogProducts ? window.CatalogProducts : null;
-  }
+  const nw = window.nw;
+  const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+  let started = false;
 
   function currentUrl() {
     return location.pathname + location.search;
@@ -24,21 +20,55 @@
     return url.replace(/\?$/, '');
   }
 
+  //---------- standard controls
+
+  function selected(selector, attribute) {
+    return $$(selector + ':checked').map((el) => el.getAttribute(attribute));
+  }
+
+  function wireControls(catalog) {
+    catalog.on('before', (e) => {
+      const builder = e.detail.urlBuilder;
+      const viewMode = document.querySelector('[data-viewmode].selected');
+      if (viewMode) builder.addParameter('viewmode', viewMode.dataset.viewmode);
+      const orderBy = document.getElementById('products-orderby');
+      if (orderBy) builder.addParameter('orderby', orderBy.value);
+      const pageSize = document.getElementById('products-pagesize');
+      if (pageSize) builder.addParameter('pagesize', pageSize.value);
+      const specs = selected('[data-option-id]', 'data-option-id');
+      if (specs.length) builder.addParameter('specs', specs.join(','));
+      const ms = selected('[data-manufacturer-id]', 'data-manufacturer-id');
+      if (ms.length) builder.addParameter('ms', ms.join(','));
+    });
+
+    nw.on('click', '[data-viewmode]', (e, el) => {
+      e.preventDefault();
+      if (el.classList.contains('selected')) return;
+      $$('[data-viewmode]').forEach((mode) => mode.classList.toggle('selected', mode === el));
+      catalog.getProducts();
+    });
+    nw.on('change', '#products-orderby, #products-pagesize, [data-option-id], [data-manufacturer-id]', () => catalog.getProducts());
+    nw.on('click', '[data-page]', (e, el) => {
+      e.preventDefault();
+      catalog.getProducts(el.dataset.page);
+    });
+  }
+
   //---------- history
 
   //state of every control that feeds the products request; saved with each history entry,
   //because a URL alone can't restore defaults (e.g. the original URL has no orderby/pagesize)
   function snapshot() {
-    const $ = window.jQuery;
     const priceEl = document.querySelector('[data-price-filter]');
     const price = priceEl && window.Alpine ? Alpine.$data(priceEl) : null;
+    const viewMode = document.querySelector('[data-viewmode].selected');
     return {
-      specs: $('[data-option-id]:checked').map(function () { return String($(this).data('option-id')); }).get(),
-      ms: $('[data-manufacturer-id]:checked').map(function () { return String($(this).data('manufacturer-id')); }).get(),
+      specs: selected('[data-option-id]', 'data-option-id'),
+      ms: selected('[data-manufacturer-id]', 'data-manufacturer-id'),
       price: price ? { from: price.from, to: price.to } : null,
-      orderby: $('#products-orderby').val() ?? null,
-      pagesize: $('#products-pagesize').val() ?? null,
-      viewmode: $('[data-viewmode].selected').data('viewmode') ?? null
+      orderby: document.getElementById('products-orderby')?.value ?? null,
+      pagesize: document.getElementById('products-pagesize')?.value ?? null,
+      viewmode: viewMode ? viewMode.dataset.viewmode : null
     };
   }
 
@@ -57,32 +87,28 @@
     };
   }
 
-  function restore(state) {
-    const products = catalog();
-    if (!products) return;
-    const $ = window.jQuery;
-
-    $('[data-option-id]').each(function () { this.checked = state.specs.includes(String($(this).data('option-id'))); });
-    $('[data-manufacturer-id]').each(function () { this.checked = state.ms.includes(String($(this).data('manufacturer-id'))); });
+  function restore(catalog, state) {
+    $$('[data-option-id]').forEach((el) => { el.checked = state.specs.includes(el.getAttribute('data-option-id')); });
+    $$('[data-manufacturer-id]').forEach((el) => { el.checked = state.ms.includes(el.getAttribute('data-manufacturer-id')); });
     //the price component may not have been initialized when the first entry was saved: fall back to the entry's URL
     window.dispatchEvent(new CustomEvent('nopwara:price-set', { detail: state.price || stateFromUrl().price }));
 
-    if (state.orderby != null) $('#products-orderby').val(state.orderby);
-    if (state.pagesize != null) $('#products-pagesize').val(state.pagesize);
-    if (state.viewmode != null) {
-      $('[data-viewmode]').each(function () { $(this).toggleClass('selected', $(this).data('viewmode') === state.viewmode); });
-    }
+    const orderBy = document.getElementById('products-orderby');
+    if (orderBy && state.orderby != null) orderBy.value = state.orderby;
+    const pageSize = document.getElementById('products-pagesize');
+    if (pageSize && state.pagesize != null) pageSize.value = state.pagesize;
+    if (state.viewmode != null) $$('[data-viewmode]').forEach((el) => el.classList.toggle('selected', el.dataset.viewmode === state.viewmode));
 
-    products.nopwaraRestoring = true;
+    catalog.nopwaraRestoring = true;
     try {
-      products.getProducts(new URLSearchParams(location.search).get('pagenumber') || undefined);
+      catalog.getProducts(new URLSearchParams(location.search).get('pagenumber') || undefined);
     } finally {
-      products.nopwaraRestoring = false;
+      catalog.nopwaraRestoring = false;
     }
   }
 
-  function extendHistory(products) {
-    products.setBrowserHistory = function (url) {
+  function extendHistory(catalog) {
+    catalog.setBrowserHistory = function (url) {
       url = normalize(url);
       //called by getProducts after the "before" hooks, so the controls already hold the new state
       const state = { nopwaraCatalog: true, controls: snapshot() };
@@ -93,64 +119,46 @@
     //the server rendered the controls for the current URL: remember them for Back
     window.history.replaceState({ nopwaraCatalog: true, controls: snapshot() }, '', currentUrl());
     window.addEventListener('popstate', (e) => {
-      if (e.state && e.state.nopwaraCatalog) restore(e.state.controls || stateFromUrl());
+      if (e.state && e.state.nopwaraCatalog) restore(catalog, e.state.controls || stateFromUrl());
     });
   }
 
-  //---------- load more
+  //---------- show more
 
-  function initLoadMore(products) {
-    const $ = window.jQuery;
+  function initLoadMore(catalog) {
     const label = document.querySelector('.products-container')?.dataset.loadMoreText || 'Show more';
-    const setLabels = () => $('[data-load-more-label]').text(label);
+    const setLabels = () => $$('[data-load-more-label]').forEach((el) => { el.textContent = label; });
     setLabels();
-    $(products).on('loaded', setLabels);
+    catalog.on('loaded', setLabels);
 
-    //a filter / sort / Back reload replaces the list: a "load more" still running must not append its stale page
-    const getProducts = products.getProducts;
-    products.getProducts = function () {
-      products.nopwaraLoadMore?.abort();
-      return getProducts.apply(this, arguments);
-    };
-
-    $(document).on('click', '[data-load-more]', function () {
-      const $button = $(this);
-      if ($button.prop('disabled')) return;
-
-      //same request as CatalogProducts.getProducts, without touching history or scrolling
-      const urlBuilder = createProductsURLBuilder(products.settings.browserPath);
-      urlBuilder.addParameter('pagenumber', $button.data('load-more'));
-      const payload = { urlBuilder };
-      $(products).trigger({ type: 'before', payload });
-      const postData = { ...payload.urlBuilder.params.query };
-      addAntiForgeryToken(postData);
-
-      $button.prop('disabled', true).find('[data-load-more-spinner]').prop('hidden', false);
-
-      products.nopwaraLoadMore?.abort();
-      products.nopwaraLoadMore = $.ajax({ cache: false, url: products.settings.fetchUrl, type: 'POST', data: postData });
-      products.nopwaraLoadMore
-        .done((response) => {
-          const $response = $('<div>').append($.parseHTML(response, document, true));
-          const $wrapper = $('.products-wrapper');
-          //appending through jQuery runs the inline scripts of the new product boxes (e.g. picture sliders)
-          $wrapper.find('.item-grid').append($response.find('.item-grid').children());
-          $wrapper.find('.load-more').replaceWith($response.find('.load-more'));
-          if (!$response.find('.load-more').length) $wrapper.find('.load-more').remove();
-          $wrapper.find('.pager').replaceWith($response.find('.pager'));
-          $(products).trigger({ type: 'loaded' });
-        })
-        .fail(() => $button.prop('disabled', false).find('[data-load-more-spinner]').prop('hidden', true))
-        .always(() => { products.nopwaraLoadMore = null; });
+    nw.on('click', '[data-load-more]', (e, button) => {
+      if (button.disabled) return;
+      button.disabled = true;
+      button.querySelector('[data-load-more-spinner]')?.removeAttribute('hidden');
+      //a failed request leaves the button usable again; a successful one replaces it
+      catalog.getProducts(button.dataset.loadMore, true).finally(() => {
+        if (button.isConnected) {
+          button.disabled = false;
+          button.querySelector('[data-load-more-spinner]')?.setAttribute('hidden', '');
+        }
+      });
     });
   }
 
-  onReady(() => {
-    const products = catalog();
-    if (!products) return;
-    extendHistory(products);
-    initLoadMore(products);
-  });
+  function start() {
+    const container = document.querySelector('.products-container[data-catalog]');
+    if (started || !container || !nw) return;
+    started = true;
+    const catalog = nw.catalog;
+    catalog.init(JSON.parse(container.dataset.catalog));
+    wireControls(catalog);
+    extendHistory(catalog);
+    initLoadMore(catalog);
+    window.dispatchEvent(new CustomEvent('nopwara:catalog-ready'));
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
 
   //---------- Alpine components
 
@@ -171,13 +179,8 @@
           this.from = this.min;
           this.to = this.max;
         });
-
-        onReady(() => {
-          const products = catalog();
-          if (!products) return;
-          window.jQuery(products).on('before', (e) => {
-            if (this.isNarrowed()) e.payload.urlBuilder.addParameter('price', this.from + '-' + this.to);
-          });
+        nw.catalog.on('before', (e) => {
+          if (this.isNarrowed()) e.detail.urlBuilder.addParameter('price', this.from + '-' + this.to);
         });
       },
 
@@ -199,7 +202,7 @@
       },
 
       apply() {
-        catalog()?.getProducts();
+        nw.catalog.getProducts();
       }
     }));
 
@@ -208,12 +211,9 @@
       chips: [],
 
       init() {
-        onReady(() => {
-          const products = catalog();
-          if (!products) return;
-          this.refresh();
-          window.jQuery(products).on('before loaded', () => this.refresh());
-        });
+        this.refresh();
+        nw.catalog.on('before', () => this.refresh());
+        nw.catalog.on('loaded', () => this.refresh());
       },
 
       labelFor(input) {
@@ -223,12 +223,12 @@
       refresh() {
         const chips = [];
 
-        document.querySelectorAll('[data-option-id]:checked').forEach((input) => {
+        $$('[data-option-id]:checked').forEach((input) => {
           const group = input.closest('.product-spec-group')?.querySelector('.name')?.textContent.trim();
           chips.push({ key: 'spec-' + input.dataset.optionId, label: (group ? group + ': ' : '') + this.labelFor(input), input });
         });
 
-        document.querySelectorAll('[data-manufacturer-id]:checked').forEach((input) => {
+        $$('[data-manufacturer-id]:checked').forEach((input) => {
           chips.push({ key: 'ms-' + input.dataset.manufacturerId, label: this.labelFor(input), input });
         });
 
@@ -242,7 +242,7 @@
       remove(chip) {
         if (chip.price) window.dispatchEvent(new CustomEvent('nopwara:price-reset'));
         else chip.input.checked = false;
-        catalog()?.getProducts();
+        nw.catalog.getProducts();
       },
 
       clear() {
@@ -250,7 +250,7 @@
           if (chip.price) window.dispatchEvent(new CustomEvent('nopwara:price-reset'));
           else chip.input.checked = false;
         });
-        catalog()?.getProducts();
+        nw.catalog.getProducts();
       }
     }));
   });

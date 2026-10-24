@@ -34,24 +34,3 @@
         </ul>
     </div>
 </div>
-<script asp-location="Footer">
-    $(function() {
-        var $msEls = $('[data-manufacturer-id]');
-        $msEls.on('change', function () {
-            CatalogProducts.getProducts();
-        });
-
-        $(CatalogProducts).on('before', function (e) {
-            var selectedMs = $.map($msEls, function (el) {
-                var $mEl = $(el);
-                if ($mEl.is(':checked')) return $mEl.data('manufacturer-id')
-                return null;
-            });
-
-            if (selectedMs && selectedMs.length > 0) {
-                e.payload.urlBuilder
-                    .addParameter('ms', selectedMs.join(','));
-            }
-        });
-    });
-</script>

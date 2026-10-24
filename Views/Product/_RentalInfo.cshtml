@@ -1,0 +1,62 @@
+@model ProductDetailsModel
+
+@using System.Globalization
+@using Nop.Core.Domain.Catalog
+@using Nop.Services.Catalog
+@inject CatalogSettings catalogSettings
+@*
+    Nopwara: core rental dates without the jQuery UI datepicker. Each date is a native <input type="date"> (no name) plus the
+    hidden field the server reads (rental_start_date_{id} / rental_end_date_{id}) in the culture's short date pattern,
+    which ProductAttributeParser.ParseRentalDates parses exactly.
+*@
+@if (Model.IsRental)
+{
+    var startDateControlId = $"rental_start_date_{Model.Id}";
+    var endDateControlId = $"rental_end_date_{Model.Id}";
+    var serverPattern = CultureInfo.CurrentCulture.TextInfo.IsRightToLeft
+        ? CultureInfo.InvariantCulture.DateTimeFormat.ShortDatePattern
+        : CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
+    string Server(DateTime? date) => date?.ToString(serverPattern, CultureInfo.InvariantCulture);
+    string Iso(DateTime? date) => date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    var changeUrl = catalogSettings.AjaxProcessAttributeChange
+        ? Url.RouteUrl(NopRouteNames.Ajax.PRODUCT_DETAILS_ATTRIBUTE_CHANGE, new { productId = Model.Id, validateAttributeConditions = false, loadPicture = false })
+        : null;
+
+    <div class="attributes rental-attributes"
+         x-data="{
+             pattern: '@JavaScriptEncoder.Default.Encode(serverPattern)',
+             format(iso) {
+                 if (!iso) return '';
+                 const [y, m, d] = iso.split('-');
+                 return this.pattern.replace(/yyyy|yy|MM|M|dd|d/g, (t) => ({ yyyy: y, yy: y.slice(2), MM: m, M: String(+m), dd: d, d: String(+d) })[t]);
+             },
+             changed(input) {
+                 document.getElementById(input.dataset.target).value = this.format(input.value);
+                 @if (changeUrl != null)
+                 {
+                     <text>nw.attributeChange({ productId: @Model.Id, url: '@Html.Raw(changeUrl)', form: '#product-details-form', prefix: '@NopCatalogDefaults.ProductAttributePrefix' });</text>
+                 }
+             }
+         }">
+        <div class="attribute-item">
+            <div class="attribute-label">
+                <label class="text-prompt" for="@(startDateControlId)_picker">@T("Products.RentalStartDate"):</label>
+                <span class="required">*</span>
+            </div>
+            <div class="attribute-data">
+                <input id="@(startDateControlId)_picker" type="date" class="datepicker" data-target="@startDateControlId" value="@Iso(Model.RentalStartDate)" min="@Iso(DateTime.Today)" @@change="changed($el)" />
+                <input id="@startDateControlId" name="@startDateControlId" type="hidden" value="@Server(Model.RentalStartDate)" />
+            </div>
+        </div>
+        <div class="attribute-item">
+            <div class="attribute-label">
+                <label class="text-prompt" for="@(endDateControlId)_picker">@T("Products.RentalEndDate"):</label>
+                <span class="required">*</span>
+            </div>
+            <div class="attribute-data">
+                <input id="@(endDateControlId)_picker" type="date" class="datepicker" data-target="@endDateControlId" value="@Iso(Model.RentalEndDate)" min="@Iso(DateTime.Today)" @@change="changed($el)" />
+                <input id="@endDateControlId" name="@endDateControlId" type="hidden" value="@Server(Model.RentalEndDate)" />
+            </div>
+        </div>
+    </div>
+}

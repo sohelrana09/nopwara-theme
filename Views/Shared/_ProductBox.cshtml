@@ -12,7 +12,7 @@
 
 @*
     Nopwara product box. Works in grid and list mode: list-mode styles use the in-[.product-list] variant,
-    because core wraps list results in .product-list. Buttons still call the core AjaxCart (jQuery) functions.
+    because core wraps list results in .product-list. Buttons call nw.cart (Content/js/nopwara-core.js).
 *@
 @{
     //prepare "Add to cart" AJAX link
@@ -89,14 +89,14 @@
             {
                 @await Html.PartialAsync("_MoveToWishlistModal", Model.ProductToWishlist)
 
-                <button type="button" class="add-to-wishlist-button @iconButtonCss" title="@T("ShoppingCart.AddToWishlist")" onclick="AjaxCart.addproducttocart_catalog('@addtowishlistlink');return false;">
+                <button type="button" class="add-to-wishlist-button @iconButtonCss" title="@T("ShoppingCart.AddToWishlist")" onclick="nw.cart.catalog('@addtowishlistlink');return false;">
                     <span class="sr-only">@T("ShoppingCart.AddToWishlist")</span>
                     <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-49b225" /></svg>
                 </button>
             }
             @if (!Model.ProductPrice.DisableAddToCompareListButton)
             {
-                <button type="button" class="add-to-compare-list-button @iconButtonCss" title="@T("ShoppingCart.AddToCompareList")" onclick="AjaxCart.addproducttocomparelist('@addtocomparelink');return false;">
+                <button type="button" class="add-to-compare-list-button @iconButtonCss" title="@T("ShoppingCart.AddToCompareList")" onclick="nw.cart.compare('@addtocomparelink');return false;">
                     <span class="sr-only">@T("ShoppingCart.AddToCompareList")</span>
                     <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-07a2ed" /></svg>
                 </button>
@@ -168,7 +168,7 @@
                     {
                         addToCartText = T("ShoppingCart.PreOrder").Text;
                     }
-                    <button type="button" class="product-box-add-to-cart-button btn btn-primary w-full px-3 in-[.product-list]:w-auto" onclick="AjaxCart.addproducttocart_catalog('@addtocartlink');return false;">
+                    <button type="button" class="product-box-add-to-cart-button btn btn-primary w-full px-3 in-[.product-list]:w-auto" onclick="nw.cart.catalog('@addtocartlink');return false;">
                         <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-d17041" /></svg>
                         <span class="truncate">@addToCartText</span>
                     </button>

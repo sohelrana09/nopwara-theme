@@ -15,146 +15,52 @@
         await workContext.GetCurrentCustomerAsync(), (await storeContext.GetCurrentStoreAsync()).Id);
 }
 
-@*Nopwara: markup restyled only; ids, names and the jQuery scripts below are unchanged from core*@
-<form asp-route="@NopRouteNames.General.SEARCH" method="get" id="small-search-box-form"
+@{
+    var searchBoxConfig = System.Text.Json.JsonSerializer.Serialize(new
+    {
+        minLength = Model.SearchTermMinimumLength,
+        emptyMessage = T("Search.EnterSearchTerms").Text,
+        searchUrl = Url.RouteUrl(NopRouteNames.General.SEARCH),
+        categories = Model.ShowSearchBoxCategories,
+        autocomplete = Model.AutoCompleteEnabled && !instantSearchActive,
+        autocompleteUrl = Url.RouteUrl(NopRouteNames.Ajax.PRODUCT_SEARCH_AUTOCOMPLETE),
+        showImages = Model.ShowProductImagesInSearchAutoComplete,
+        thumbSize = Model.AutoCompleteSearchThumbPictureSize
+    });
+}
+
+@*Nopwara: ids and names are unchanged from core; submit and the autocomplete fallback are the Alpine component nopwaraSearchBox (Content/js/nopwara.js)*@
+<div class="relative w-full" x-data="nopwaraSearchBox(@searchBoxConfig)" @@click.outside="open = false" @@keydown.escape="open = false">
+<form asp-route="@NopRouteNames.General.SEARCH" method="get" id="small-search-box-form" x-on:submit.prevent="submit($el)"
       class="flex w-full items-stretch overflow-hidden rounded-lg border border-slate-300 bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100">
     @if (Model.ShowSearchBox)
     {
-        <input type="text" class="search-box-text min-w-0 flex-1 border-0 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-slate-400" id="@searchBoxId" autocomplete="off" name="@termFormName" placeholder="@T("Search.SearchBox.Tooltip")" aria-label="@T("Search.SearchBox.Text.Label")" />
+        <input type="text" class="search-box-text min-w-0 flex-1 border-0 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-slate-400" id="@searchBoxId" autocomplete="off" name="@termFormName" placeholder="@T("Search.SearchBox.Tooltip")" aria-label="@T("Search.SearchBox.Text.Label")"
+               x-ref="term" @@input="query()" @@focus="query()" @@keydown.down.prevent="move(1)" @@keydown.up.prevent="move(-1)" @@keydown.enter="pick($event)" />
         @if(Model.ShowSearchBoxCategories)
         {
-            <select asp-for="SearchCategoryId" name="@categoryFormName" asp-items="Model.AvailableCategories" class="search-box-category hidden max-w-44 border-0 border-l border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 outline-none sm:block"></select>
-            <script asp-location="Footer">
-                $(function () {
-                    $('#@Html.IdFor(m => m.SearchCategoryId)').on('change', function () {
-                        $('#@searchBoxId').focus();
-                    });
-                });
-            </script>
+            <select asp-for="SearchCategoryId" name="@categoryFormName" asp-items="Model.AvailableCategories" x-ref="category" x-on:change="$refs.term.focus()" class="search-box-category hidden max-w-44 border-0 border-l border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 outline-none sm:block"></select>
         }
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.SearchBoxBeforeSearchButton, additionalData = Model })
         <button type="submit" class="button-1 search-box-button flex items-center gap-2 bg-primary-600 px-4 text-sm font-semibold text-white hover:bg-primary-700">
             <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-94925d" /></svg>
             <span class="sr-only sm:not-sr-only">@T("Search.Button")</span>
         </button>
-
-        <script asp-location="Footer">
-            $("#small-search-box-form").on("submit", function (event) {
-
-                event.preventDefault();
-
-                @if(Model.SearchTermMinimumLength > 0)
-                {
-                    <text>
-                    if ($("#@searchBoxId").val() == "") {
-                        alert('@Html.Raw(JavaScriptEncoder.Default.Encode(T("Search.EnterSearchTerms").Text))');
-                        $("#@searchBoxId").focus();
-                        return;
-                    }
-                    </text>
-                }
-
-                var form = document.getElementById('small-search-box-form');
-                var formData = new FormData(form);
-
-                @if(Model.ShowSearchBoxCategories)
-                {
-                    <text>
-                    var selectedCategory = formData.get('@categoryFormName');
-                    if (selectedCategory && selectedCategory != '0') {
-                        formData.append('advs', true);
-                        formData.append('isc', true);
-                    }
-                    </text>
-                }
-
-                window.location.href = `@Url.RouteUrl(NopRouteNames.General.SEARCH)?${new URLSearchParams(formData).toString()}`;
-            });
-        </script>
-
-        @if (Model.AutoCompleteEnabled && !instantSearchActive)
-        {
-            //Nopwara: the core autocomplete needs jQuery UI at once (.data("ui-autocomplete") below), not on demand
-            NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery-ui-dist/jquery-ui.min.js");
-            NopHtml.AppendCssFileParts("~/lib_npm/jquery-ui-dist/jquery-ui.min.css");
-            <script asp-location="Footer">
-                $(function() {
-                    var cache = new Map();
-                    var showLinkToResultSearch;
-                    var searchText;
-
-                    $('#@searchBoxId').autocomplete({
-                        delay: 500,
-                        minLength: @Model.SearchTermMinimumLength,
-                        source: function (request, response) {
-                            var term = request.term && request.term.trim().toLowerCase();
-                            if (term.length < @Model.SearchTermMinimumLength) {
-                                response();
-                                return;
-                            }
-
-                            var categoryElement = $('#@Html.IdFor(m => m.SearchCategoryId)');
-                            var categoryId = categoryElement.length == 0 ? 0 : categoryElement.val()
-
-                            var query = { term, categoryId };
-                            var cacheKey = JSON.stringify(query);
-
-                            if (cache.has(cacheKey)) {
-                                response(cache.get(cacheKey));
-                                return;
-                            }
-
-                            $.getJSON('@(Url.RouteUrl(NopRouteNames.Ajax.PRODUCT_SEARCH_AUTOCOMPLETE))', query, function (data, status, xhr) {
-                                cache.set(cacheKey, data);
-                                response(data);
-                            });
-                        },
-                        appendTo: '.search-box',
-                        select: function(event, ui) {
-                            $("#@searchBoxId").val(ui.item.label);
-                            setLocation(ui.item.producturl);
-                            return false;
-                        },
-                        //append link to the end of list
-                        open: function(event, ui) {
-                            //display link to search page
-                            if (showLinkToResultSearch) {
-                                searchText = document.getElementById("@searchBoxId").value;
-                                $(".ui-autocomplete").append("<li class=\"ui-menu-item\" role=\"presentation\"><a href=\"/search?q=" + searchText + "\">@T("Search.SearchBox.SearchPageLink")</a></li>");
-                            }
-                        }
-                    })
-                    .focus(function () {
-                        $(this).autocomplete('search', $(this).val());
-                    })
-                    .data("ui-autocomplete")._renderItem = function(ul, item) {
-                        //html encode
-                        var t = htmlEncode(item.label);
-                        showLinkToResultSearch = item.showlinktoresultsearch;
-
-                        var li = $("<li class='search-box-item'></li>");
-
-                        li.data("item.autocomplete", item);
-
-                        var link = $("<a class='search-box-link'></a>");
-
-                        @if(Model.ShowProductImagesInSearchAutoComplete)
-                        {
-                            <text>
-                            link.append('<img src="' + item.productpictureurl + '" width="@Model.AutoCompleteSearchThumbPictureSize">');
-                            </text>
-                        }
-                        
-                        link.append('<span>' + t + '</span>');
-
-                        li.append(link);
-                        
-                        return li.appendTo(ul);
-                    };
-
-                });
-            </script>
-        }
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.SearchBox, additionalData = Model })
     }
 </form>
+@if (Model.ShowSearchBox && Model.AutoCompleteEnabled && !instantSearchActive)
+{
+    <ul class="ui-autocomplete absolute inset-x-0 top-full z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg" x-show="open" x-cloak role="listbox">
+        <template x-for="(item, i) in items" :key="i">
+            <li class="search-box-item" role="option" :aria-selected="active === i">
+                <a :href="item.producturl" class="search-box-link flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" :class="active === i && 'bg-slate-50'">
+                    <template x-if="showImages"><img :src="item.productpictureurl" :width="thumbSize" alt="" class="shrink-0 object-contain" /></template>
+                    <span x-text="item.label"></span>
+                </a>
+            </li>
+        </template>
+        <li x-show="showLink" class="border-t border-slate-100"><a :href="searchUrl + '?q=' + encodeURIComponent($refs.term.value)" class="block px-3 py-2 text-sm font-semibold text-primary-700 hover:bg-slate-50">@T("Search.SearchBox.SearchPageLink")</a></li>
+    </ul>
+}
+</div>

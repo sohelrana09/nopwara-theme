@@ -54,24 +54,3 @@
         }
     </div>
 </div>
-<script asp-location="Footer">
-    $(function() {
-        var $optionEls = $('[data-option-id]');
-        $optionEls.on('change', function () {
-            CatalogProducts.getProducts();
-        });
-
-        $(CatalogProducts).on('before', function (e) {
-            var selectedOptions = $.map($optionEls, function (el) {
-                var $optionEl = $(el);
-                if ($optionEl.is(':checked')) return $optionEl.data('option-id');
-                return null;
-            });
-
-            if (selectedOptions && selectedOptions.length > 0) {
-                e.payload.urlBuilder
-                    .addParameter('specs', selectedOptions.join(','));
-            }
-        });
-    });
-</script>

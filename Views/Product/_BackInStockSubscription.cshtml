@@ -1,0 +1,9 @@
+@model ProductDetailsModel
+@*Nopwara: core view; the popup is nw.dialog (no jQuery UI)*@
+@if (Model.DisplayBackInStockSubscription)
+{
+    <div class="back-in-stock-subscription">
+        <button type="button" id="back-in-stock-subscribe-@Model.Id" class="button-2 subscribe-button"
+                onclick="nw.dialog({ url: '@Url.RouteUrl(NopRouteNames.Ajax.BACK_IN_STOCK_SUBSCRIBE_POPUP, new { productId = Model.Id })', title: '@JavaScriptEncoder.Default.Encode(T("BackInStockSubscriptions.NotifyMeWhenAvailable").Text)' })">@T("BackInStockSubscriptions.NotifyMeWhenAvailable")</button>
+    </div>
+}
