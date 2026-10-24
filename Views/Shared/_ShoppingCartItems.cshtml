@@ -118,7 +118,7 @@
                         <div class="subtotal text-right @@xl:min-w-24">
                             <span class="td-title sr-only">@T("ShoppingCart.ItemTotal"):</span>
                             <span class="product-subtotal text-base font-bold text-slate-900">@item.SubTotal</span>
-                            @if (Model.ShowItemDiscount && !string.IsNullOrEmpty(item.Discount))
+                            @if (!string.IsNullOrEmpty(item.Discount))
                             {
                                 <div class="discount text-xs text-emerald-700">
                                     @T("ShoppingCart.ItemYouSave", item.Discount)

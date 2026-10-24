@@ -1,6 +1,6 @@
 # Nopwara theme for nopCommerce
 
-A lightweight storefront theme for nopCommerce 5.00, built with **Tailwind CSS v4** and **Alpine.js 3**. It follows the Hyvä approach from Magento: core views are rewritten one at a time with utility classes and small Alpine components, while the ids and classes that core jQuery scripts depend on are kept, so core features keep working.
+A lightweight storefront theme for nopCommerce 4.90 (this `nop-4.90` branch; `main` is for 5.00), built with **Tailwind CSS v4** and **Alpine.js 3**. It follows the Hyvä approach from Magento: core views are rewritten one at a time with utility classes and small Alpine components, while the ids and classes that core jQuery scripts depend on are kept, so core features keep working.
 
 ## Features
 
@@ -45,7 +45,7 @@ A lightweight storefront theme for nopCommerce 5.00, built with **Tailwind CSS v
 
 ## Requirements
 
-- nopCommerce **5.00**
+- nopCommerce **4.90** (use the `main` branch for 5.00). On 4.90 the 5.00-only features are left out: product 3D models, search history, the per-vendor cart and the X/TikTok/Snapchat/Pinterest/Tumblr links.
 - Node.js 20+ to rebuild the CSS (the built `Content/css/styles.css` is included)
 
 ## Install

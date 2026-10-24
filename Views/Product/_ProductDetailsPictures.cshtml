@@ -8,8 +8,8 @@
     the core attribute-change handler in _ProductAttributes.cshtml updates them.
 *@
 @{
-    var has3d = Model.Product3dObjectModel?.Id > 0;
-    var galleryThumbsCount = Model.PictureModels.Count + (has3d ? 1 : 0);
+    //nopCommerce 4.90 has no product 3D models (5.00 adds a 3D thumb here)
+    var galleryThumbsCount = Model.PictureModels.Count;
     var zoom = Model.DefaultPictureZoomEnabled;
     var dataId = $"nopwara-gallery-data-{Model.Id}";
     var pictures = Model.PictureModels.Select(p => new
@@ -52,14 +52,6 @@
             <img alt="@Model.DefaultPictureModel.AlternateText" src="@Model.DefaultPictureModel.ImageUrl" title="@Model.DefaultPictureModel.Title"
                  id="main-product-img-@Model.Id" x-ref="main" x-show="!show3d" class="max-h-full max-w-full object-contain" />
         }
-
-        @if (has3d)
-        {
-            @*core shows the 3D viewer next to the picture when it is the only thumb; otherwise it is toggled from the thumbs*@
-            <div class="size-full [&_model-viewer]:size-full" @(galleryThumbsCount > 1 ? Html.Raw("x-show=\"show3d\" x-cloak") : Html.Raw(""))>
-                @await Html.PartialAsync("_ProductDetails3dObject", Model.Product3dObjectModel)
-            </div>
-        }
     </div>
 
     @if (galleryThumbsCount > 1)
@@ -74,14 +66,6 @@
                         @@click="select(@i)"
                         title="@picture.Title">
                     <img src="@picture.ThumbImageUrl" alt="@picture.AlternateText" class="size-full object-contain" loading="lazy" />
-                </button>
-            }
-            @if (has3d)
-            {
-                <button type="button" class="thumb-item size-16 shrink-0 overflow-hidden rounded-md border-2 bg-white p-1 sm:size-20"
-                        :class="show3d ? 'border-primary-600' : 'border-slate-200 hover:border-slate-300'"
-                        @@click="select3d()">
-                    <img src="@Model.Product3dObjectModel.ThumbImageUrl" alt="@Model.Product3dObjectModel.AlternateText" class="size-full object-contain" />
                 </button>
             }
         </div>

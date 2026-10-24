@@ -33,30 +33,6 @@
         <form asp-route="@NopRouteNames.General.CART" method="post" enctype="multipart/form-data" id="shopping-cart-form"
               class="grid gap-8 @(Model.IsEditable ? "lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start" : "")">
             <div class="min-w-0 space-y-6">
-                @if (Model.IsEditable && Model.DisplayVendorList)
-                {
-                    <div class="sc-vendor flex items-center gap-3 text-sm">
-                        <label asp-for="SelectedVendorId" class="sc-vendor-label font-medium text-slate-700">
-                            @T("ShoppingCart.VendorList")
-                        </label>
-                        <select asp-for="SelectedVendorId" asp-items="Model.AvailableVendors" class="rounded-md border border-slate-300 px-3 py-1.5"></select>
-                    </div>
-                    <script asp-location="Footer">
-                        $(function() {
-                            $('#@Html.IdFor(m => m.SelectedVendorId)').on('change', function() {
-
-                                $('<input>', {
-                                    type: 'hidden',
-                                    name: 'changevendorcart',
-                                    value: '1'
-                                }).appendTo('#shopping-cart-form');
-
-                                $('#shopping-cart-form').trigger('submit');
-                            });
-                        })
-                    </script>
-                }
-
                 @await Html.PartialAsync("_ShoppingCartItems", Model)
 
                 @if (Model.IsEditable && Model.Items.Count > 0 && Model.DisplayTaxShippingInfo)

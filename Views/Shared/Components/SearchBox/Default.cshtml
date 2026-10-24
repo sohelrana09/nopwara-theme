@@ -82,21 +82,9 @@
 
                     $('#@searchBoxId').autocomplete({
                         delay: 500,
-                        minLength: 0,
+                        minLength: @Model.SearchTermMinimumLength,
                         source: function (request, response) {
                             var term = request.term && request.term.trim().toLowerCase();
-                            @if(Model.SearchHistoryEnabled)
-                            {
-                            <text>
-                            if (term.length == 0) {
-                                $.getJSON('@(Url.RouteUrl(NopRouteNames.Ajax.PRODUCT_SEARCH_HISTORY_AUTOCOMPLETE))', function (data, status, xhr) {
-                                  response(data);
-                                });
-                                return;
-                            }
-                            </text>
-                            }
-
                             if (term.length < @Model.SearchTermMinimumLength) {
                                 response();
                                 return;
@@ -147,40 +135,17 @@
 
                         var link = $("<a class='search-box-link'></a>");
 
-                        if (item.IsKeyword) {
-                            link.prop("href", "@Url.RouteUrl(NopRouteNames.General.SEARCH)?q=" + t)
-                        }
-                        else {
                         @if(Model.ShowProductImagesInSearchAutoComplete)
                         {
                             <text>
                             link.append('<img src="' + item.productpictureurl + '" width="@Model.AutoCompleteSearchThumbPictureSize">');
                             </text>
                         }
-                        }
                         
                         link.append('<span>' + t + '</span>');
 
                         li.append(link);
                         
-                        if (item.IsKeyword) {
-                            var removeBtn = $("<span class='search-box-remove'>x</span>");
-                            removeBtn.on("click", function(e) {
-                                e.preventDefault();
-
-                                var postData = { term: t };
-                                addAntiForgeryToken(postData);
-
-                                $.post("@Url.RouteUrl(NopRouteNames.Ajax.DELETE_PRODUCT_SEARCH_TERMS)", postData, function() {
-                                    $('#@searchBoxId').autocomplete("search", "");
-                                });
-
-                                return false;
-                            });
-
-                            li.append(removeBtn);
-                        }
-
                         return li.appendTo(ul);
                     };
 
