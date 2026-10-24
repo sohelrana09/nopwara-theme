@@ -1,0 +1,7 @@
+@model IList<ProductOverviewModel>
+@*Nopwara: shown as a carousel (Views/Shared/_NopwaraProductCarousel.cshtml)*@
+@{
+    ViewData["NopwaraCarouselTitle"] = T("Products.RelatedProducts").Text;
+    ViewData["NopwaraCarouselClass"] = "related-products-grid";
+}
+@await Html.PartialAsync("_NopwaraProductCarousel", Model, ViewData)
