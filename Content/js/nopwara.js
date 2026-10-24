@@ -151,18 +151,27 @@
 
                 load: function () {
                     var term = this.$refs.term.value.trim().toLowerCase();
-                    if (term.length < o.minLength || !term) {
-                        this.open = false;
-                        return;
-                    }
-                    var query = { term: term, categoryId: this.$refs.category ? this.$refs.category.value : 0 };
-                    var key = JSON.stringify(query), self = this;
+                    var self = this;
                     var show = function (data) {
                         self.items = data || [];
                         self.showLink = self.items.some(function (i) { return i.showlinktoresultsearch; });
                         self.active = -1;
                         self.open = self.items.length > 0;
                     };
+                    //nopCommerce 5.00: the shopper's recent search terms while the box is empty
+                    if (!term && o.historyUrl) {
+                        window.nw.get(o.historyUrl).then(function (data) {
+                            if (!self.$refs.term.value.trim())
+                                show(data);
+                        });
+                        return;
+                    }
+                    if (term.length < o.minLength || !term) {
+                        this.open = false;
+                        return;
+                    }
+                    var query = { term: term, categoryId: this.$refs.category ? this.$refs.category.value : 0 };
+                    var key = JSON.stringify(query);
                     if (cache.has(key)) {
                         show(cache.get(key));
                         return;
@@ -180,13 +189,22 @@
                     this.active = (this.active + delta + this.items.length) % this.items.length;
                 },
 
+                itemUrl: function (item) {
+                    return item.IsKeyword ? o.searchUrl + '?q=' + encodeURIComponent(item.label) : item.producturl;
+                },
+
+                removeTerm: function (item) {
+                    var self = this;
+                    window.nw.post(o.deleteHistoryUrl, { term: item.label }).then(function () { self.load(); });
+                },
+
                 pick: function (e) {
                     var item = this.open && this.items[this.active];
                     if (!item)
                         return;
                     e.preventDefault();
                     this.$refs.term.value = item.label;
-                    location.href = item.producturl;
+                    location.href = this.itemUrl(item);
                 }
             };
         });
