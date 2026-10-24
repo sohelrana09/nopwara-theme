@@ -80,4 +80,6 @@ jobs:
         with:
           name: lighthouse-${{ github.base_ref || github.ref_name }}
           path: .lighthouseci
+          #the folder is hidden (leading dot), which upload-artifact skips by default
+          include-hidden-files: true
           if-no-files-found: ignore
