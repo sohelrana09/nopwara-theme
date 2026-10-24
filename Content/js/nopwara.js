@@ -148,6 +148,7 @@
          * so this component updates the DOM imperatively instead of binding :src.
          */
         window.Alpine.data('nopwaraGallery', function (dataElementId, zoomEnabled) {
+            var ZOOM = 2.5, MAX_ZOOM = 4;
             return {
                 pictures: [],
                 active: 0,
@@ -155,10 +156,43 @@
                 lightbox: false,
                 lightboxIndex: 0,
                 lightboxSrc: '',
+                //desktop hover magnifier
+                hover: false,
+                hoverSrc: '',
+                hoverPos: '50% 50%',
+                //lightbox pinch / pan state
+                scale: 1,
+                x: 0,
+                y: 0,
+                pointers: {},
+                gesture: null,
+                lastTap: 0,
 
                 init: function () {
                     var dataEl = document.getElementById(dataElementId);
                     this.pictures = dataEl ? JSON.parse(dataEl.textContent) : [];
+                    var self = this;
+                    //attribute combinations swap the picture (rewritten _ProductAttributes sends nopwara:picture)
+                    window.addEventListener('nopwara:picture', function (e) {
+                        if (!e.detail || String(e.detail.productId) !== self.$el.dataset.productId)
+                            return;
+                        self.show(e.detail.image, e.detail.full, e.detail.title, e.detail.alt);
+                        var index = self.pictures.findIndex(function (p) { return p.image === e.detail.image; });
+                        if (index >= 0)
+                            self.active = index;
+                    });
+                },
+
+                show: function (image, full, title, alt) {
+                    var img = this.$refs.main;
+                    img.src = image;
+                    if (alt !== undefined) img.alt = alt || '';
+                    if (title !== undefined) img.title = title || '';
+                    if (this.$refs.anchor) {
+                        this.$refs.anchor.href = full;
+                        this.$refs.anchor.title = title || '';
+                    }
+                    this.hover = false;
                 },
 
                 select: function (index) {
@@ -167,18 +201,43 @@
                         return;
                     this.active = index;
                     this.show3d = false;
-                    var img = this.$refs.main;
-                    img.src = picture.image;
-                    img.alt = picture.alt || '';
-                    img.title = picture.title || '';
-                    if (this.$refs.anchor) {
-                        this.$refs.anchor.href = picture.full;
-                        this.$refs.anchor.title = picture.title || '';
-                    }
+                    this.show(picture.image, picture.full, picture.title, picture.alt);
                 },
 
                 select3d: function () {
                     this.show3d = true;
+                },
+
+                fullUrl: function () {
+                    return this.$refs.anchor ? this.$refs.anchor.href : (this.pictures[this.active] || {}).full;
+                },
+
+                /*
+                 * Hover zoom (mouse only): the full-size picture is a background of an overlay, positioned under the cursor.
+                 * It loads on first hover and is skipped when it isn't meaningfully larger than the box.
+                 */
+                hoverStart: function (e) {
+                    if (!zoomEnabled || e.pointerType !== 'mouse')
+                        return;
+                    var src = this.fullUrl(), self = this, box = this.$refs.box;
+                    if (!src)
+                        return;
+                    var probe = new Image();
+                    probe.onload = function () {
+                        if (src !== self.fullUrl() || probe.naturalWidth < box.clientWidth * 1.3)
+                            return;
+                        self.hoverSrc = src;
+                        self.hover = true;
+                    };
+                    probe.src = src;
+                    this.hoverMove(e);
+                },
+
+                hoverMove: function (e) {
+                    var r = this.$refs.box.getBoundingClientRect();
+                    var px = Math.min(100, Math.max(0, (e.clientX - r.left) / r.width * 100));
+                    var py = Math.min(100, Math.max(0, (e.clientY - r.top) / r.height * 100));
+                    this.hoverPos = px + '% ' + py + '%';
                 },
 
                 openLightbox: function () {
@@ -186,7 +245,9 @@
                         return;
                     // the anchor href may have been swapped by an attribute combination picture
                     this.lightboxIndex = this.active;
-                    this.lightboxSrc = this.$refs.anchor ? this.$refs.anchor.href : (this.pictures[this.active] || {}).full;
+                    this.lightboxSrc = this.fullUrl();
+                    this.resetZoom();
+                    this.hover = false;
                     this.lightbox = true;
                 },
 
@@ -195,6 +256,126 @@
                         return;
                     this.lightboxIndex = (this.lightboxIndex + delta + this.pictures.length) % this.pictures.length;
                     this.lightboxSrc = this.pictures[this.lightboxIndex].full;
+                    this.resetZoom();
+                },
+
+                resetZoom: function () {
+                    this.scale = 1;
+                    this.x = 0;
+                    this.y = 0;
+                    this.pointers = {};
+                    this.gesture = null;
+                },
+
+                transform: function () {
+                    return 'translate(' + this.x + 'px,' + this.y + 'px) scale(' + this.scale + ')';
+                },
+
+                //zoom to a scale keeping the point (cx, cy, relative to the stage centre) under the finger
+                zoomTo: function (scale, cx, cy) {
+                    scale = Math.min(MAX_ZOOM, Math.max(1, scale));
+                    var k = scale / this.scale;
+                    this.x = cx - (cx - this.x) * k;
+                    this.y = cy - (cy - this.y) * k;
+                    this.scale = scale;
+                    if (scale === 1) {
+                        this.x = 0;
+                        this.y = 0;
+                    }
+                    this.clamp();
+                },
+
+                clamp: function () {
+                    var img = this.$refs.zoomImg;
+                    if (!img)
+                        return;
+                    var maxX = Math.max(0, (img.offsetWidth * this.scale - window.innerWidth) / 2);
+                    var maxY = Math.max(0, (img.offsetHeight * this.scale - window.innerHeight) / 2);
+                    this.x = Math.min(maxX, Math.max(-maxX, this.x));
+                    this.y = Math.min(maxY, Math.max(-maxY, this.y));
+                },
+
+                centre: function (e) {
+                    var r = this.$refs.stage.getBoundingClientRect();
+                    return { x: e.clientX - r.left - r.width / 2, y: e.clientY - r.top - r.height / 2 };
+                },
+
+                pointerDown: function (e) {
+                    try { this.$refs.stage.setPointerCapture(e.pointerId); } catch (err) { /* pointer already released */ }
+                    this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+                    var ids = Object.keys(this.pointers);
+                    if (ids.length === 2) {
+                        var a = this.pointers[ids[0]], b = this.pointers[ids[1]];
+                        var mid = this.centre({ clientX: (a.x + b.x) / 2, clientY: (a.y + b.y) / 2 });
+                        this.gesture = { type: 'pinch', dist: Math.hypot(a.x - b.x, a.y - b.y), scale: this.scale, mid: mid };
+                    } else {
+                        this.gesture = { type: 'pan', sx: e.clientX, sy: e.clientY, x: this.x, y: this.y, moved: false };
+                    }
+                },
+
+                pointerMove: function (e) {
+                    if (!this.pointers[e.pointerId] || !this.gesture)
+                        return;
+                    this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+                    var g = this.gesture;
+                    if (g.type === 'pinch') {
+                        var ids = Object.keys(this.pointers);
+                        if (ids.length < 2)
+                            return;
+                        var a = this.pointers[ids[0]], b = this.pointers[ids[1]];
+                        this.zoomTo(g.scale * Math.hypot(a.x - b.x, a.y - b.y) / g.dist, g.mid.x, g.mid.y);
+                        return;
+                    }
+                    var dx = e.clientX - g.sx, dy = e.clientY - g.sy;
+                    if (Math.abs(dx) + Math.abs(dy) > 6)
+                        g.moved = true;
+                    if (this.scale > 1) {
+                        this.x = g.x + dx;
+                        this.y = g.y + dy;
+                        this.clamp();
+                    }
+                },
+
+                pointerUp: function (e) {
+                    var g = this.gesture;
+                    delete this.pointers[e.pointerId];
+                    if (Object.keys(this.pointers).length) {
+                        //one finger left after a pinch: continue as a pan
+                        var id = Object.keys(this.pointers)[0], p = this.pointers[id];
+                        this.gesture = { type: 'pan', sx: p.x, sy: p.y, x: this.x, y: this.y, moved: true };
+                        return;
+                    }
+                    this.gesture = null;
+                    if (!g || g.type !== 'pan')
+                        return;
+                    var dx = e.clientX - g.sx;
+                    //swipe changes the picture when not zoomed
+                    if (this.scale === 1 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(e.clientY - g.sy)) {
+                        this.step(dx < 0 ? 1 : -1);
+                        return;
+                    }
+                    if (g.moved)
+                        return;
+                    //a tap beside the picture closes the lightbox
+                    var r = this.$refs.zoomImg.getBoundingClientRect();
+                    if (this.scale === 1 && r.width && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) {
+                        this.lightbox = false;
+                        return;
+                    }
+                    //double tap / double click toggles zoom at that point
+                    var now = Date.now();
+                    if (now - this.lastTap < 300) {
+                        var c = this.centre(e);
+                        this.zoomTo(this.scale > 1 ? 1 : ZOOM, c.x, c.y);
+                        this.lastTap = 0;
+                    } else {
+                        this.lastTap = now;
+                    }
+                },
+
+                wheel: function (e) {
+                    var c = this.centre(e);
+                    this.zoomTo(this.scale * (e.deltaY < 0 ? 1.2 : 1 / 1.2), c.x, c.y);
                 }
             };
         });
