@@ -16,7 +16,8 @@
         "chromeFlags": "--headless=new --no-sandbox",
         "blockedUrlPatterns": [
           "*googletagmanager.com*",
-          "*google-analytics.com*"
+          "*google-analytics.com*",
+          "*sharethis.com*"
         ]
       }
     },
