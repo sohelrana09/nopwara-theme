@@ -1,0 +1,57 @@
+@*Nopwara: core view with its script rewritten without jQuery*@
+@model IList<CheckoutShippingMethodModel.ShippingMethodModel>
+
+<div class="delivery-date-selector">
+    <label for="desired-delivery-date">@T("Checkout.SelectDesiredDeliveryDate")</label>
+    <select id="desired-delivery-date" name="desired-delivery-date"></select>
+</div>
+<script asp-location="Footer">
+    nw.ready(function() {
+        var selectors = document.querySelectorAll('.delivery-date-selector');
+        var deliveryDateSelect = document.getElementById('desired-delivery-date');
+        var radioButtons = Array.prototype.slice.call(document.querySelectorAll('input[name="shippingoption"]'));
+        var shippingMethods = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
+        if (!deliveryDateSelect)
+            return;
+
+        function updateDeliveryDates(selectedValue) {
+            deliveryDateSelect.replaceChildren();
+            var method = shippingMethods.find(function(m) {
+                return (m.Name + '___' + m.ShippingRateComputationMethodSystemName) === selectedValue;
+            });
+            var dates = method && method.DesiredDeliveryDate;
+            var visible = !!(dates && dates.Enabled && dates.AvailableDates && dates.AvailableDates.length > 0);
+            selectors.forEach(function (el) { el.style.display = visible ? '' : 'none'; });
+            if (!visible)
+                return;
+            dates.AvailableDates.forEach(function(dateOption) {
+                var option = document.createElement('option');
+                option.value = dateOption.Value;
+                option.textContent = dateOption.Text;
+                deliveryDateSelect.appendChild(option);
+            });
+            if (dates.SelectedDate)
+                deliveryDateSelect.value = dates.SelectedDate;
+        }
+
+        //update the dates when the shipping method changes
+        radioButtons.forEach(function (radio) {
+            radio.addEventListener('change', function() { updateDeliveryDates(this.value); });
+        });
+
+        //save the selected date to the hidden input of the selected shipping method
+        deliveryDateSelect.addEventListener('change', function() {
+            var selected = radioButtons.find(function (r) { return r.checked; });
+            if (!selected)
+                return;
+            var hiddenInput = document.getElementById('deliverydate_' + radioButtons.indexOf(selected));
+            if (hiddenInput)
+                hiddenInput.value = deliveryDateSelect.value;
+        });
+
+        //initialize with the selected method's dates
+        var checked = radioButtons.find(function (r) { return r.checked; });
+        if (checked)
+            updateDeliveryDates(checked.value);
+    });
+</script>

@@ -42,16 +42,15 @@
                         <select asp-for="SelectedVendorId" asp-items="Model.AvailableVendors" class="rounded-md border border-slate-300 px-3 py-1.5"></select>
                     </div>
                     <script asp-location="Footer">
-                        $(function() {
-                            $('#@Html.IdFor(m => m.SelectedVendorId)').on('change', function() {
-
-                                $('<input>', {
-                                    type: 'hidden',
-                                    name: 'changevendorcart',
-                                    value: '1'
-                                }).appendTo('#shopping-cart-form');
-
-                                $('#shopping-cart-form').trigger('submit');
+                        nw.ready(function() {
+                            document.getElementById('@Html.IdFor(m => m.SelectedVendorId)')?.addEventListener('change', function() {
+                                var form = document.getElementById('shopping-cart-form');
+                                var input = document.createElement('input');
+                                input.type = 'hidden';
+                                input.name = 'changevendorcart';
+                                input.value = '1';
+                                form.appendChild(input);
+                                form.requestSubmit ? form.requestSubmit() : form.submit();
                             });
                         })
                     </script>

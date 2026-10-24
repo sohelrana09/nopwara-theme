@@ -572,6 +572,11 @@
             return this.send(url, {});
         },
 
+        //nopCommerce 5.00
+        renameCustomWishlist: function (url, wishlistName, wishlistId) {
+            return this.send(url, { wishlistName: wishlistName, wishlistId: wishlistId });
+        },
+
         moveToWishlist: function (url, wishlistId) {
             return this.send(url, { wishlistId: wishlistId });
         }
@@ -1086,6 +1091,7 @@
         moveToCustomWishlist: function (url, itemId, wishlistId) { return cart.moveToCustomWishlist(url, itemId, wishlistId); },
         createCustomWishlist: function (url, name, productId) { return cart.createCustomWishlist(url, name, productId); },
         deleteCustomWishlist: function (url) { return cart.deleteCustomWishlist(url); },
+        renameCustomWishlist: function (url, name, wishlistId) { return cart.renameCustomWishlist(url, name, wishlistId); },
         moveproducttowishlist: function (url, wishlistId) { return cart.moveToWishlist(url, wishlistId); },
         success_process: function (response) { return cart.success(response); }
     };

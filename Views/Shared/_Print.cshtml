@@ -1,4 +1,5 @@
-﻿@inject IThemeContext themeContext
+﻿@using Nop.Services.Themes
+@inject IThemeContext themeContext
 
 @{
     var themeName = await themeContext.GetWorkingThemeNameAsync();
