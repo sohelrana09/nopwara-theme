@@ -1,9 +1,13 @@
-﻿@model ProductReviewHelpfulnessModel
+@model ProductReviewHelpfulnessModel
+@*
+    Nopwara: core review helpfulness without jQuery. The vote buttons call one shared function (the identical footer script
+    is registered once per page), so reviews on later pages of the paged review list (kept in a <template>) work too.
+*@
 <div class="product-review-helpfulness">
     <span class="question">@T("Reviews.Helpfulness.WasHelpful?")</span>
     <span class="vote-options">
-        <span id="vote-yes-@(Model.ProductReviewId)" class="vote">@T("Common.Yes")</span>
-        <span id="vote-no-@(Model.ProductReviewId)" class="vote">@T("Common.No")</span>
+        <span id="vote-yes-@(Model.ProductReviewId)" class="vote" role="button" tabindex="0" onclick="nwReviewHelpfulness(@Model.ProductReviewId, true)">@T("Common.Yes")</span>
+        <span id="vote-no-@(Model.ProductReviewId)" class="vote" role="button" tabindex="0" onclick="nwReviewHelpfulness(@Model.ProductReviewId, false)">@T("Common.No")</span>
     </span>
     <span class="vote-stats">
         (<span id="helpfulness-vote-yes-@(Model.ProductReviewId)">@(Model.HelpfulYesTotal)</span>/<span id="helpfulness-vote-no-@(Model.ProductReviewId)">@(Model.HelpfulNoTotal)</span>)
@@ -11,24 +15,12 @@
     <span id="helpfulness-vote-result-@(Model.ProductReviewId)" class="result"></span>
 
     <script asp-location="Footer">
-        nw.ready(function () {
-            document.getElementById('vote-yes-@(Model.ProductReviewId)').addEventListener('click', function () {
-                setProductReviewHelpfulness@(Model.ProductReviewId)('true');
-            });
-            document.getElementById('vote-no-@(Model.ProductReviewId)').addEventListener('click', function () {
-                setProductReviewHelpfulness@(Model.ProductReviewId)('false');
-            });
-        });
-
-        function setProductReviewHelpfulness@(Model.ProductReviewId)(wasHelpful) {
-            nw.post('@(Url.RouteUrl(NopRouteNames.Ajax.SET_PRODUCT_REVIEW_HELPFULNESS))', {
-                productReviewId: @(Model.ProductReviewId),
-                washelpful: wasHelpful
-            })
+        function nwReviewHelpfulness(reviewId, wasHelpful) {
+            nw.post('@(Url.RouteUrl(NopRouteNames.Ajax.SET_PRODUCT_REVIEW_HELPFULNESS))', { productReviewId: reviewId, washelpful: wasHelpful })
                 .then(function (data) {
-                    document.getElementById('helpfulness-vote-yes-@(Model.ProductReviewId)').innerHTML = data.TotalYes;
-                    document.getElementById('helpfulness-vote-no-@(Model.ProductReviewId)').innerHTML = data.TotalNo;
-                    var result = document.getElementById('helpfulness-vote-result-@(Model.ProductReviewId)');
+                    document.getElementById('helpfulness-vote-yes-' + reviewId).textContent = data.TotalYes;
+                    document.getElementById('helpfulness-vote-no-' + reviewId).textContent = data.TotalNo;
+                    var result = document.getElementById('helpfulness-vote-result-' + reviewId);
                     result.innerHTML = data.Result;
                     result.style.display = '';
                     clearTimeout(result.nwTimer);

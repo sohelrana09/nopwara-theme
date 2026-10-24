@@ -1037,6 +1037,59 @@
          * Tabs: <div x-data="nwTabs"> with [data-nw-tab="id"] buttons and [data-nw-panel="id"] panels
          * (the first tab is active unless one has data-nw-active).
          */
+        /*
+         * Pager over a list: <div x-data="nwPager(size)"> with x-ref="list" (the first page, rendered by the server) and an
+         * optional <template x-ref="rest"> holding the other items, which cost nothing until their page is shown.
+         * Views/Shared/_NopwaraPager.cshtml renders the controls (page, pages, numbers, from, to, go(n)).
+         */
+        window.Alpine.data('nwPager', function (size) {
+            return {
+                page: 1,
+                size: Math.max(1, size || 5),
+                items: [],
+
+                init: function () {
+                    var list = this.$refs.list;
+                    var rest = this.$refs.rest;
+                    var items = Array.prototype.slice.call(list.children);
+                    if (rest)
+                        items = items.concat(Array.prototype.slice.call(rest.content.children));
+                    this.items = items;
+                },
+
+                get pages() {
+                    return Math.ceil(this.items.length / this.size);
+                },
+
+                get from() {
+                    return (this.page - 1) * this.size + 1;
+                },
+
+                get to() {
+                    return Math.min(this.page * this.size, this.items.length);
+                },
+
+                //up to five page numbers around the current page
+                get numbers() {
+                    var start = Math.max(1, Math.min(this.page - 2, this.pages - 4));
+                    var numbers = [];
+                    for (var n = start; n <= Math.min(this.pages, start + 4); n++)
+                        numbers.push(n);
+                    return numbers;
+                },
+
+                go: function (page) {
+                    if (page < 1 || page > this.pages || page === this.page)
+                        return;
+                    this.page = page;
+                    var list = this.$refs.list;
+                    list.replaceChildren.apply(list, this.items.slice((page - 1) * this.size, page * this.size));
+                    if (list.getBoundingClientRect().top < 0)
+                        list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            };
+        });
+
         window.Alpine.data('nwTabs', function () {
             return {
                 tab: '',
