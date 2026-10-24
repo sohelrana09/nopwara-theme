@@ -1,0 +1,83 @@
+# Speed budget: builds nopCommerce with this theme, installs the sample store and runs Lighthouse CI against fixed
+# budgets (.github/lighthouse/lighthouserc.json). A change that makes the theme slower or heavier fails the check.
+# main is built against nopCommerce 5.00, nop-4.90 against nopCommerce 4.90.8.
+name: Lighthouse
+
+on:
+  push:
+    branches: [main, nop-4.90]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - name: nopCommerce version for this branch
+        id: nop
+        run: |
+          branch="${{ github.base_ref || github.ref_name }}"
+          if [ "$branch" = "nop-4.90" ]; then
+            echo "ref=release-4.90.8" >> "$GITHUB_OUTPUT"
+          else
+            #the nopCommerce 5.00 develop commit the Nopwara plugins are tested on (see nopwara-suite)
+            echo "ref=77d112f365e210ebdfa2f9790c8202a0e3b1c74e" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          path: theme
+
+      - name: nopCommerce source
+        run: |
+          git init -q nop
+          git -C nop fetch -q --depth 1 https://github.com/nopSolutions/nopCommerce.git "${{ steps.nop.outputs.ref }}"
+          git -C nop -c advice.detachedHead=false checkout -q FETCH_HEAD
+          #Nopwara is the only theme, so the store uses it without changing settings
+          rm -rf nop/src/Presentation/Nop.Web/Themes/DefaultClean
+          rsync -a --exclude .git --exclude .github theme/ nop/src/Presentation/Nop.Web/Themes/Nopwara/
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Build
+        run: dotnet build nop/src/Presentation/Nop.Web/Nop.Web.csproj -c Release -nologo -v quiet
+
+      - name: Install the sample store
+        run: |
+          start() {
+            (cd nop/src/Presentation/Nop.Web && ASPNETCORE_URLS=http://localhost:5080 nohup dotnet run -c Release --no-build --no-launch-profile > "$RUNNER_TEMP/nop.log" 2>&1 &)
+            for i in $(seq 1 90); do curl -s -o /dev/null http://localhost:5080/ && return 0; sleep 2; done
+            cat "$RUNNER_TEMP/nop.log"; return 1
+          }
+          start
+          python3 theme/.github/lighthouse/install.py http://localhost:5080
+          #the installer stops the app (it expects the host to restart it)
+          pkill -f Nop.Web || true
+          sleep 3
+          start
+          for page in / /notebooks /apple-macbook-pro "/search?q=apple"; do
+            curl -s -o /dev/null -w "%{http_code} $page\n" -A "Mozilla/5.0 Chrome/130.0" "http://localhost:5080$page"
+          done
+
+      - name: Lighthouse CI
+        run: npx --yes @lhci/cli@0.14.0 autorun --config=theme/.github/lighthouse/lighthouserc.json
+
+      - name: Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-${{ github.base_ref || github.ref_name }}
+          path: .lighthouseci
+          if-no-files-found: ignore

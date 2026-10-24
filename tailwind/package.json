@@ -4,7 +4,7 @@
   "license": "AGPL-3.0-only",
   "description": "Build tooling for the Nopwara nopCommerce theme (Tailwind CSS + Alpine.js)",
   "scripts": {
-    "copy:alpine": "node -e \"require('fs').copyFileSync('node_modules/alpinejs/dist/cdn.min.js','../Content/js/alpine.min.js')\"",
+    "copy:alpine": "node -e \"const fs=require('fs');fs.writeFileSync('../Content/js/alpine.min.js',';'+fs.readFileSync('node_modules/alpinejs/dist/cdn.min.js','utf8'))\"",
     "build:css": "tailwindcss -i app.css -o ../Content/css/styles.min.css --minify",
     "build": "npm run copy:alpine && npm run build:css",
     "watch": "tailwindcss -i app.css -o ../Content/css/styles.min.css --watch"

@@ -3,6 +3,11 @@
 
 @inject CatalogSettings catalogSettings
 @inject IThemeContext themeContext
+@inject Nop.Services.Configuration.ISettingService settingService
+@inject Nop.Services.Cms.IWidgetPluginManager widgetPluginManager
+@inject Nop.Services.Media.IPictureService pictureService
+@inject Nop.Core.IStoreContext storeContext
+@inject Nop.Core.IWorkContext workContext
 
 @{
     Layout = "";
@@ -13,8 +18,10 @@
     //"@media not all and (min-width:64rem)" into invalid "and(" and drop every max-* responsive rule
     NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/styles.min.css");
 
-    //footer scripts render in reverse order of registration: nopwara.js, then Alpine, then core jQuery scripts
-    NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/alpine.min.js");
+    //footer scripts: Append* registrations render in reverse order (nopwara.js first, before the core scripts), while
+    //Alpine is *added* so it renders last: every component script (theme and plugins, e.g. quick view, instant search)
+    //registers its "alpine:init" listener before Alpine starts, and no script has to sit in <head> blocking the first paint
+    NopHtml.AddScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/alpine.min.js");
     NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/nopwara.js");
     //catalog navigation (history, load more, price range, filter chips); inert on pages without CatalogProducts
     NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/nopwara-catalog.js");
@@ -24,5 +31,52 @@
     {
         NopHtml.AppendCssFileParts("~/lib_npm/swiper/swiper-bundle.min.css");
     }
-    NopHtml.AppendCssFileParts("~/lib_npm/jquery-ui-dist/jquery-ui.min.css");
+    //jQuery UI CSS comes with jQuery UI, on demand (Content/js/nopwara-jqueryui.js)
+
+    //home page slider (core Widgets.Swiper): it lazy-loads its slides, so the first slide (usually the largest element, LCP)
+    //is preloaded, and its height is reserved from the start (no layout shift) with nopwarathemesettings.sliderratio
+    string firstSlideUrl = null;
+    string sliderRatio = null;
+    if (NopHtml.GeneratePageCssClasses().Contains("html-home-page"))
+    {
+        var storeId = (await storeContext.GetCurrentStoreAsync()).Id;
+        if (await widgetPluginManager.IsPluginActiveAsync("Widgets.Swiper", await workContext.GetCurrentCustomerAsync(), storeId))
+        {
+            var slides = await settingService.GetSettingByKeyAsync<string>("swipersettings.slides", null, storeId, loadSharedValueIfNotFound: true);
+            var match = string.IsNullOrEmpty(slides) ? null : System.Text.RegularExpressions.Regex.Match(slides, "\"PictureId\"\\s*:\\s*(\\d+)");
+            if (match?.Success == true && int.TryParse(match.Groups[1].Value, out var pictureId) && pictureId > 0)
+                firstSlideUrl = await pictureService.GetPictureUrlAsync(pictureId, showDefaultPicture: false);
+
+            //"width / height" of the slide pictures; default: nopCommerce's sample banners (1200 x 500)
+            sliderRatio = await settingService.GetSettingByKeyAsync("nopwarathemesettings.sliderratio", "12 / 5", storeId, loadSharedValueIfNotFound: true);
+            if (!System.Text.RegularExpressions.Regex.IsMatch(sliderRatio, "^\\d{1,5}\\s*/\\s*\\d{1,5}$"))
+                sliderRatio = "12 / 5";
+        }
+    }
 }
+@if (!string.IsNullOrEmpty(firstSlideUrl))
+{
+    <link rel="preload" as="image" href="@firstSlideUrl" fetchpriority="high" />
+}
+@if (sliderRatio != null)
+{
+    <style>:root { --nw-slider-ratio: @sliderRatio; }</style>
+}
+@*hover prefetch (Chromium speculation rules; other browsers ignore it): a page starts loading when the pointer rests on its
+  link, so the click feels instant. Only plain GET pages: no cart/checkout/account actions, no state-changing routes, no queries.*@
+<script type="speculationrules" asp-location="Head">
+{
+  "prefetch": [{
+    "where": {
+      "and": [
+        { "href_matches": "/*" },
+        { "not": { "href_matches": "/*\\?*" } },
+        { "not": { "href_matches": ["/cart", "/wishlist*", "/checkout*", "/onepagecheckout*", "/login*", "/logout*", "/register*", "/customer/*", "/order/*", "/compareproducts*", "/clearcomparelist*", "/changecurrency/*", "/changelanguage/*", "/changetaxtype/*", "/admin*", "/download/*", "/newsletter/*", "/eucookielaw*", "/addproducttocart/*", "/removeproductfromcomparelist/*", "/returnrequest*", "/boards/*", "/privatemessages*", "/nopwara-*"] } },
+        { "not": { "selector_matches": "[rel~=nofollow], [target=_blank], [download], [data-no-prefetch]" } }
+      ]
+    },
+    "eagerness": "moderate"
+  }]
+}
+</script>
+<script asp-location="Head">window.nopwaraJqueryUi = { js: '@Url.Content("~/lib_npm/jquery-ui-dist/jquery-ui.min.js")', css: '@Url.Content("~/lib_npm/jquery-ui-dist/jquery-ui.min.css")' };</script>

@@ -47,6 +47,18 @@ A lightweight storefront theme for nopCommerce 4.90 (this `nop-4.90` branch; `ma
 
 The brand colour is a set of CSS variables, so a preset recolours the whole theme. Choose one in Admin → Configuration → Settings → All settings: add `nopwarathemesettings.colorpreset` with the value `medical` (clinical teal) or `default` (blue). It can be set per store.
 
+## Performance
+
+The theme is built to be lighter than nopCommerce's DefaultClean, and a Lighthouse budget in CI (`.github/workflows/lighthouse.yml`) keeps it that way: a change that makes pages slower or heavier fails the check.
+
+- **Menus cost nothing until they open.** The mobile menu is built in the browser from the desktop menu the first time the drawer opens. Dropdown extras (mega menu promos, products, guides) sit in `<template>` tags, and their pictures use `data-src`, until the dropdown first opens.
+- **One icon sprite.** Icons are `<use>` references to `Content/icons.svg`, cached by the browser. To add an icon, add a `<symbol>` there and change the `?v=` value in the views.
+- **No jQuery UI or jQuery Migrate by default.** The theme's `_Root.Head` (a copy of core's, so keep it in sync when upgrading nopCommerce) loads jQuery UI only when a page calls one of its widgets (`Content/js/nopwara-jqueryui.js`). The theme is moving to no jQuery at all.
+- **No render-blocking scripts.** Every script is in the footer; Alpine is added last, so all components register first.
+- **Images:** product cards have `srcset`/`sizes`, `width`/`height` and lazy loading, except for the first row, which loads eagerly. The product page's main picture has `fetchpriority="high"`. On the home page, the first slide of nopCommerce's slider is preloaded and the slider's height is reserved, so nothing jumps. If your slides aren't 1200 × 500, set `nopwarathemesettings.sliderratio` (e.g. `1600 / 560`) in All settings.
+- **Hover prefetch:** speculation rules start loading a page when the pointer rests on its link (Chromium browsers; others ignore it). Cart, checkout, account and state-changing links are excluded.
+- **Stylesheet named `.min.css`:** nopCommerce 4.90 re-minifies other CSS files and breaks some media queries.
+
 ## Requirements
 
 - nopCommerce **4.90** (use the `main` branch for 5.00). On 4.90 the 5.00-only features are left out: product 3D models, search history, the per-vendor cart and the X/TikTok/Snapchat/Pinterest/Tumblr links.

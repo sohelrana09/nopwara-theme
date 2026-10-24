@@ -71,6 +71,53 @@
 }
 
 @layer components {
+  /* ---------- repeated markup: one short class instead of 10-30 utilities per element, so pages stay small ---------- */
+  /* main menu: top-level link (compact mode set by nopwaraMenuFit), dropdown link, dropdown motion */
+  .nw-menu-top {
+    @apply flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-semibold text-slate-800 transition-colors hover:text-primary-600 group-hover:text-primary-600 xl:px-3 group-[.menu--compact]/bar:px-2 group-[.menu--compact]/bar:text-[0.8125rem] group-[.menu--compact]/bar:[&>svg]:hidden;
+  }
+  .nw-menu-link {
+    @apply flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-primary-600;
+  }
+  /* dropdowns fade/slide in on hover, focus or click; closing waits 100ms so moving between items never flickers */
+  .nw-panel-motion {
+    @apply lg:invisible lg:translate-y-1 lg:opacity-0 lg:transition-[opacity,transform,visibility] lg:delay-100 lg:duration-150 lg:ease-out lg:group-hover:visible lg:group-hover:translate-y-0 lg:group-hover:opacity-100 lg:group-hover:delay-0 lg:group-focus-within:visible lg:group-focus-within:translate-y-0 lg:group-focus-within:opacity-100 lg:group-focus-within:delay-0 lg:group-data-open:visible lg:group-data-open:translate-y-0 lg:group-data-open:opacity-100 lg:group-data-open:delay-0;
+  }
+  /* mobile menu: root items, child links, children with their own level */
+  .nw-mtop {
+    @apply flex w-full items-center gap-1.5 px-4 py-3.5 text-left text-base font-semibold text-slate-800 hover:bg-slate-50;
+  }
+  .nw-mlink {
+    @apply flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50;
+  }
+  .nw-mlink-parent {
+    @apply font-medium text-slate-800;
+  }
+  /* product card, its details column and the round icon buttons on its picture (wishlist, compare, quick view) */
+  .nw-card {
+    @apply flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white transition-shadow hover:shadow-md in-[.product-list]:flex-row;
+  }
+  .nw-card-details {
+    @apply flex flex-1 flex-col gap-2 border-t border-slate-100 p-4 in-[.product-list]:border-l in-[.product-list]:border-t-0;
+  }
+  .nw-icon-btn {
+    @apply inline-flex size-8 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-sm backdrop-blur hover:text-primary-600;
+  }
+
+  /* core Widgets.Swiper home slider: its height is reserved from the start (ratio from nopwarathemesettings.sliderratio,
+     set in Views/Shared/Head.cshtml), so the page doesn't jump when the lazy-loaded slides arrive */
+  .nop-slider {
+    aspect-ratio: var(--nw-slider-ratio, 12 / 5);
+  }
+  .nop-slider .swiper-wrapper,
+  .nop-slider .swiper-slide,
+  .nop-slider .swiper-slide > a {
+    height: 100% !important;
+  }
+  .nop-slider .slider-img {
+    @apply block size-full object-cover;
+  }
+
   .site-container {
     @apply mx-auto w-full max-w-(--container-site) px-4 sm:px-6 lg:px-8;
   }

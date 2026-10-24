@@ -5,7 +5,7 @@
 @*
     Nopwara main menu (replaces public.menu.js with Alpine).
     lg+: horizontal bar; dropdowns open on hover, focus or click.
-    < lg: _NopwaraMobileMenu, slide-in levels inside the header drawer.
+    < lg: slide-in levels inside the header drawer, built in the browser from this bar (nopwaraBuildMobileMenu).
 
     Mega menu extras come from the Nopwara mega menu plugin (Widgets.NopwaraMegaMenu), when installed:
     - HttpContext.Items["nopwara.megamenu"]: badge, icon, "View all" link and layout per item ("i{menuItemId}" / "c{categoryId}")
@@ -21,15 +21,12 @@
         return key != null && megaMenu != null && megaMenu.TryGetValue(key, out var extras) ? extras : null;
     }
 
-    //dropdowns are always rendered; they fade/slide in on hover, focus or click; closing waits 100ms so moving between items never flickers
-    const string panelMotion = "lg:invisible lg:translate-y-1 lg:opacity-0 lg:transition-[opacity,transform,visibility] lg:delay-100 lg:duration-150 lg:ease-out "
-        + "lg:group-hover:visible lg:group-hover:translate-y-0 lg:group-hover:opacity-100 lg:group-hover:delay-0 "
-        + "lg:group-focus-within:visible lg:group-focus-within:translate-y-0 lg:group-focus-within:opacity-100 lg:group-focus-within:delay-0 "
-        + "lg:group-data-open:visible lg:group-data-open:translate-y-0 lg:group-data-open:opacity-100 lg:group-data-open:delay-0";
+    //dropdown fade/slide (component class in tailwind/app.css)
+    const string panelMotion = "nw-panel-motion";
 }
 @*too many top-level items for one row: compact mode (no bar icons, tighter text), then a second row as a last resort*@
 <ul role="menubar" class="menu @Model.CssClass group/bar flex flex-wrap items-center gap-x-1 max-lg:hidden"
-    x-data="nopwaraMenuFit" :class="{ 'menu--compact': compact }">
+    x-data="nopwaraMenuFit">
     @for (var index = 0; index < Model.Items.Count; index++)
     {
         var item = Model.Items[index];
@@ -69,7 +66,7 @@
                         :aria-expanded="open"
                         aria-haspopup="menu">
                     <span class="sr-only">@item.Title</span>
-                    <svg class="size-4 transition-transform duration-200 group-data-open:rotate-180 group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                    <svg class="size-4 transition-transform duration-200 group-data-open:rotate-180 group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-13ed16" /></svg>
                 </button>
             </div>
 
@@ -125,7 +122,8 @@
                         @if (hasColumns)
                         {
                             <div class="@(extrasLeft ? "order-first" : null) @(hasChildren ? "shrink-0" : "min-w-0 flex-1")">
-                                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = "nopwara_megamenu_panel", additionalData = item })
+                                @*built when the dropdown first opens (nopwaraLoadPanel), so closed dropdowns add no DOM*@
+                                <template data-nw-lazy>@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = "nopwara_megamenu_panel", additionalData = item })</template>
                             </div>
                         }
                     </div>
@@ -144,7 +142,7 @@
                         @if (hasColumns)
                         {
                             <div class="p-3">
-                                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = "nopwara_megamenu_panel", additionalData = item })
+                                <template data-nw-lazy>@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = "nopwara_megamenu_panel", additionalData = item })</template>
                             </div>
                         }
                         @if (!string.IsNullOrEmpty(viewAllUrl))
@@ -159,5 +157,12 @@
         </li>
     }
 </ul>
+@*decided before the first paint (not when Alpine starts), so the header never changes height after load (layout shift)*@
+<script asp-location="None">(function (bar) { if (bar && new Set(Array.prototype.map.call(bar.children, function (li) { return li.offsetTop; })).size > 1) bar.classList.add('menu--compact'); })(document.currentScript.previousElementSibling);</script>
 
-@await Html.PartialAsync("_NopwaraMobileMenu.cshtml", Model, new ViewDataDictionary(ViewData) { ["MegaMenu"] = megaMenu })
+@*mobile menu: built from the bar above the first time the drawer opens (nopwaraBuildMobileMenu in nopwara.js, called from
+  _Header), so the menu is sent once; data-view-all: "View all {0}" for items without the mega menu's own link*@
+<div class="h-full lg:hidden" data-nw-mobile-menu
+     data-icons="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074"
+     data-back="@T("Common.Back")"
+     data-view-all="@(await NopwaraLocalization.GetResourceAsync("Nopwara.Menu.ViewAll", (await NopwaraWorkContext.GetWorkingLanguageAsync()).Id, logIfNotFound: false, defaultValue: "View all {0}"))"></div>

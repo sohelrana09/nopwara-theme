@@ -4,6 +4,7 @@
 @{
     var extras = ViewData["Extras"] as Dictionary<string, string>;
     var icon = extras?.GetValueOrDefault("icon");
+    var iconName = extras?.GetValueOrDefault("iconName");
     var badge = extras?.GetValueOrDefault("badge");
     //full class names (not concatenated) so Tailwind finds them
     var badgeCss = extras?.GetValueOrDefault("badgeColor") switch
@@ -15,8 +16,14 @@
         _ => "bg-primary-100 text-primary-700"
     };
 }
-@if (!string.IsNullOrEmpty(icon))
+@if (!string.IsNullOrEmpty(iconName))
 {
+    @*the sprite holds the mega menu icons as mm-<name>*@
+    <svg class="menu__icon size-4 shrink-0 text-slate-400 group-hover:text-current" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#mm-@iconName" /></svg>
+}
+else if (!string.IsNullOrEmpty(icon))
+{
+    @*older mega menu plugin: path data only*@
     <svg class="menu__icon size-4 shrink-0 text-slate-400 group-hover:text-current" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
         @foreach (var d in icon.Split('|'))
         {

@@ -21,7 +21,7 @@
         <button type="button" x-on:click="remove(chip)"
                 class="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 py-1 pl-3 pr-2 text-xs font-medium text-primary-700 transition hover:border-primary-300 hover:bg-primary-100">
             <span x-text="chip.label"></span>
-            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-93ec04" /></svg>
             <span class="sr-only">@await Text("Nopwara.Catalog.RemoveFilter", "Remove filter")</span>
         </button>
     </template>

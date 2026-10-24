@@ -4,7 +4,7 @@
 *@
 <header class="header relative z-40 bg-white shadow-sm"
         x-data="{ mobileOpen: false }"
-        x-effect="document.body.classList.toggle('overflow-hidden', mobileOpen)"
+        x-effect="document.body.classList.toggle('overflow-hidden', mobileOpen); mobileOpen && nopwaraBuildMobileMenu($el.querySelector('[data-nw-mobile-menu]'))"
         @@keydown.escape.window="mobileOpen = false">
     <a class="skip sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:shadow" href="#main">@T("Header.SkipNavigation.Text")</a>
     @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderBefore })
@@ -29,7 +29,7 @@
                 :aria-expanded="mobileOpen"
                 aria-controls="nopwara-nav">
             <span class="sr-only">@T("Menu")</span>
-            <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+            <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-10224c" /></svg>
         </button>
 
         <div class="header-logo shrink-0">
@@ -60,7 +60,7 @@
             <span class="text-base font-semibold">@T("Menu")</span>
             <button type="button" class="rounded-md p-2 text-slate-500 hover:bg-slate-100" @@click="mobileOpen = false">
                 <span class="sr-only">@T("Common.Close")</span>
-                <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-93ec04" /></svg>
             </button>
         </div>
         @*mobile: the menu fills the rest of the drawer (its levels scroll inside); lg+: the bar*@
