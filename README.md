@@ -43,10 +43,14 @@ A lightweight storefront theme for nopCommerce 5.00, built with **Tailwind CSS v
 
 `tailwind/app.css` scans each plugin's `Views` folder (`@source` lines). Remove the lines for plugins you don't use, or keep them: a missing folder is skipped.
 
+## Colour presets
+
+The brand colour is a set of CSS variables, so a preset recolours the whole theme. Choose one in Admin → Configuration → Settings → All settings: add `nopwarathemesettings.colorpreset` with the value `medical` (clinical teal) or `default` (blue). It can be set per store.
+
 ## Requirements
 
 - nopCommerce **5.00**
-- Node.js 20+ to rebuild the CSS (the built `Content/css/styles.css` is included)
+- Node.js 20+ to rebuild the CSS (the built `Content/css/styles.min.css` is included)
 
 ## Install
 

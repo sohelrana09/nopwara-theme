@@ -200,6 +200,59 @@
         });
 
         /*
+         * Menu panels cost nothing until they open: pictures are rendered with data-src, and the mega menu's featured
+         * products are a placeholder with data-megamenu-products (their URL). This loads both the first time a panel opens.
+         */
+        window.nopwaraLoadPanel = function (el) {
+            if (!el)
+                return;
+            el.querySelectorAll('img[data-src]').forEach(function (img) {
+                img.src = img.getAttribute('data-src');
+                img.removeAttribute('data-src');
+            });
+            el.querySelectorAll('[data-megamenu-products]').forEach(function (box) {
+                var url = box.getAttribute('data-megamenu-products');
+                box.removeAttribute('data-megamenu-products');
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function (response) { return response.ok ? response.text() : ''; })
+                    .then(function (html) {
+                        //nothing visible (e.g. all products unpublished): drop the column
+                        if (html.trim())
+                            box.innerHTML = html;
+                        else
+                            box.closest('.nopwara-megamenu-products').remove();
+                    })
+                    .catch(function () { });
+            });
+        };
+
+        /*
+         * Desktop main menu bar (Views/Shared/Components/MainMenu/Default.cshtml): when the top-level items need more
+         * than one row, "compact" drops their icons and tightens the spacing (see _NopwaraMenuLink.cshtml)
+         */
+        window.Alpine.data('nopwaraMenuFit', function () {
+            return {
+                compact: false,
+                init: function () {
+                    var self = this;
+                    var fit = function () {
+                        self.compact = false;
+                        self.$nextTick(function () {
+                            var tops = Array.prototype.map.call(self.$el.children, function (li) { return li.offsetTop; });
+                            self.compact = new Set(tops).size > 1;
+                        });
+                    };
+                    var timer;
+                    window.addEventListener('resize', function () {
+                        clearTimeout(timer);
+                        timer = setTimeout(fit, 150);
+                    });
+                    fit();
+                }
+            };
+        });
+
+        /*
          * Mobile main menu (Views/Shared/Components/MainMenu/_NopwaraMobileMenu.cshtml): a stack of open levels.
          * Each level is a panel that slides in from the right; the header drawer's "mobileOpen" closes it all.
          */
@@ -223,6 +276,7 @@
                     this.openers = this.openers.concat(opener || null);
                     this.$nextTick(() => {
                         var panel = this.$root.querySelector('[data-panel="' + id + '"]');
+                        window.nopwaraLoadPanel(panel);
                         var first = panel && panel.querySelector('button, a[href]');
                         if (first)
                             first.focus({ preventScroll: true });

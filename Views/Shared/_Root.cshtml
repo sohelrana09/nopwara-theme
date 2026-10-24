@@ -1,5 +1,13 @@
+@inject Nop.Services.Configuration.ISettingService NopwaraSettingService
+@inject Nop.Core.IStoreContext NopwaraStoreContext
 @{
     Layout = "_Root.Head";
+
+    //colour preset: Admin > Configuration > Settings > All settings, "nopwarathemesettings.colorpreset" = default | medical
+    var colorPreset = await NopwaraSettingService.GetSettingByKeyAsync("nopwarathemesettings.colorpreset", "default",
+        (await NopwaraStoreContext.GetCurrentStoreAsync()).Id, loadSharedValueIfNotFound: true);
+    if (string.Equals(colorPreset, "medical", StringComparison.OrdinalIgnoreCase))
+        NopHtml.AppendPageCssClassParts("palette-medical");
 }
 @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.BodyStartHtmlTagAfter })
 @{ await Html.RenderPartialAsync("_Notifications"); }

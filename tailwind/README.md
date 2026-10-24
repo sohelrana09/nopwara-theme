@@ -4,7 +4,7 @@ Nopwara is a Tailwind CSS + Alpine.js theme (the Hyvä approach, applied to nopC
 
 ```bash
 npm install        # once
-npm run build      # copy Alpine to ../Content/js, build minified ../Content/css/styles.css
+npm run build      # copy Alpine to ../Content/js, build minified ../Content/css/styles.min.css
 npm run watch      # rebuild CSS while editing views
 ```
 

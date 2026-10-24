@@ -5,9 +5,9 @@
   "description": "Build tooling for the Nopwara nopCommerce theme (Tailwind CSS + Alpine.js)",
   "scripts": {
     "copy:alpine": "node -e \"require('fs').copyFileSync('node_modules/alpinejs/dist/cdn.min.js','../Content/js/alpine.min.js')\"",
-    "build:css": "tailwindcss -i app.css -o ../Content/css/styles.css --minify",
+    "build:css": "tailwindcss -i app.css -o ../Content/css/styles.min.css --minify",
     "build": "npm run copy:alpine && npm run build:css",
-    "watch": "tailwindcss -i app.css -o ../Content/css/styles.css --watch"
+    "watch": "tailwindcss -i app.css -o ../Content/css/styles.min.css --watch"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
