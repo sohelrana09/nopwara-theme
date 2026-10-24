@@ -1,0 +1,27 @@
+﻿@inject IThemeContext themeContext
+
+@{
+    var themeName = await themeContext.GetWorkingThemeNameAsync();
+    var title = await NopHtml.GenerateTitleAsync();
+}
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" dir="@Html.GetUIDirection(!await Html.ShouldUseRtlThemeAsync())" class="@NopHtml.GeneratePageCssClasses()">
+<head>
+    <title>@title</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+
+    @*Nopwara: no jQuery here (core loads jQuery + Migrate for nothing), and the theme stylesheet instead of a print.css it doesn't have*@
+    <link href="~/Themes/@themeName/Content/css/styles.min.css" rel="stylesheet" type="text/css" />
+
+    @NopHtml.GenerateCssFiles()    
+    @NopHtml.GenerateScripts(ResourceLocation.Head)
+    @NopHtml.GenerateInlineScripts(ResourceLocation.Head)
+</head>
+<body>
+    @RenderBody()
+    <!-- FooterScripts  -->
+
+    @NopHtml.GenerateScripts(ResourceLocation.Footer)
+    @NopHtml.GenerateInlineScripts(ResourceLocation.Footer)
+</body>
+</html>

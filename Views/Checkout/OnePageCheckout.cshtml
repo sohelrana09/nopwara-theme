@@ -40,12 +40,12 @@
 }
 
 @*
-    Nopwara one-page checkout. Markup, ids and scripts mirror core on purpose: the steps are driven by
-    public.accordion.js (toggles li.tab-section .active / .allow) and public.onepagecheckout.js (ajax-loads each
-    step). Step visuals are styled from those state classes in tailwind/app.css (".checkout-page" section).
+    Nopwara one-page checkout. Markup and ids mirror core on purpose: the steps are driven by Content/js/nopwara-opc.js,
+    a jQuery-free port of core public.accordion.js + public.onepagecheckout.js with the same objects (Accordion, Checkout,
+    Billing, Shipping...), so core step partials and payment plugins keep working. Step visuals are styled from the
+    state classes (li.tab-section .active / .allow) in tailwind/app.css (".checkout-page" section).
 *@
-<script src="~/js/public.accordion.js" asp-location="Footer"></script>
-<script src="~/js/public.onepagecheckout.js" asp-location="Footer"></script>
+<script src="~/Themes/Nopwara/Content/js/nopwara-opc.js" asp-location="Footer"></script>
 
 <div class="page checkout-page mx-auto max-w-3xl">
     <div class="page-title mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -75,8 +75,8 @@
                             '@(storeLocation)checkout/OpcSaveBilling/',
                             @(Model.DisableBillingAddressCheckoutStep.ToString().ToLowerInvariant()),
                             @((await _customerService.IsGuestAsync(await workContext.GetCurrentCustomerAsync())).ToString().ToLowerInvariant()));
-                        if ($("#billing-address-select").length > 0) {
-                            Billing.newAddress(!$('#billing-address-select').val());
+                        if (document.getElementById('billing-address-select')) {
+                            Billing.newAddress(!document.getElementById('billing-address-select').value);
                         }
                     </script>
                     <div class="buttons" id="billing-buttons-container">
@@ -103,8 +103,8 @@
                         </form>
                         <script asp-location="Footer">
                             Shipping.init('#co-shipping-form', '@(storeLocation)checkout/OpcSaveShipping/');
-                            if ($("#shipping-address-select").length > 0) {
-                                Shipping.newAddress($('#shipping-address-select').val(), @Model.BillingAddress.BillingNewAddress.Id);
+                            if (document.getElementById('shipping-address-select')) {
+                                Shipping.newAddress(document.getElementById('shipping-address-select').value, @Model.BillingAddress.BillingNewAddress.Id);
                             }
                         </script>
                         <div class="buttons" id="shipping-buttons-container">

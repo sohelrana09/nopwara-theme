@@ -1,6 +1,6 @@
 # Nopwara theme for nopCommerce
 
-A lightweight storefront theme for nopCommerce 5.00, built with **Tailwind CSS v4** and **Alpine.js 3**. It follows the Hyvä approach from Magento: core views are rewritten one at a time with utility classes and small Alpine components, while the ids and classes that core jQuery scripts depend on are kept, so core features keep working.
+A lightweight storefront theme for nopCommerce 5.00 (use the `nop-4.90` branch for 4.90), built with **Tailwind CSS v4** and **Alpine.js 3**, with **no jQuery**. It follows the Hyvä approach from Magento: core views are rewritten with utility classes and small Alpine components, keeping the ids, names and routes the server side needs, so core features keep working.
 
 ## Features
 
@@ -14,7 +14,7 @@ A lightweight storefront theme for nopCommerce 5.00, built with **Tailwind CSS v
   - long filter lists collapse after six values;
   - a "Show more products" button that loads the next page.
 - **Product page (simple and grouped):**
-  - gallery with thumbnails;
+  - gallery with thumbnails, hover zoom on desktop and a pinch / double-tap zoom lightbox;
   - tabs for description, specifications and reviews;
   - pill and swatch attributes;
   - a styled estimate-shipping popup;
@@ -53,11 +53,27 @@ The theme is built to be lighter than nopCommerce's DefaultClean, and a Lighthou
 
 - **Menus cost nothing until they open.** The mobile menu is built in the browser from the desktop menu the first time the drawer opens. Dropdown extras (mega menu promos, products, guides) sit in `<template>` tags, and their pictures use `data-src`, until the dropdown first opens.
 - **One icon sprite.** Icons are `<use>` references to `Content/icons.svg`, cached by the browser. To add an icon, add a `<symbol>` there and change the `?v=` value in the views.
-- **No jQuery UI or jQuery Migrate by default.** The theme's `_Root.Head` (a copy of core's, so keep it in sync when upgrading nopCommerce) loads jQuery UI only when a page calls one of its widgets (`Content/js/nopwara-jqueryui.js`). The theme is moving to no jQuery at all.
+- **No jQuery.** No jQuery, jQuery UI, jQuery Migrate, jquery.validate or core `public.*.js` files: the theme's `_Root.Head` (a copy of core's, so keep it in sync when upgrading nopCommerce) loads `Content/js/nopwara-core.js` instead. See "No jQuery" below.
 - **No render-blocking scripts.** Every script is in the footer; Alpine is added last, so all components register first.
 - **Images:** product cards have `srcset`/`sizes`, `width`/`height` and lazy loading, except for the first row, which loads eagerly. The product page's main picture has `fetchpriority="high"`. On the home page, the first slide of nopCommerce's slider is preloaded and the slider's height is reserved, so nothing jumps. If your slides aren't 1200 × 500, set `nopwarathemesettings.sliderratio` (e.g. `1600 / 560`) in All settings.
 - **Hover prefetch:** speculation rules start loading a page when the pointer rests on its link (Chromium browsers; others ignore it). Cart, checkout, account and state-changing links are excluded.
 - **Stylesheet named `.min.css`:** nopCommerce 4.90 re-minifies other CSS files and breaks some media queries.
+
+## No jQuery
+
+Every storefront view that uses jQuery in core is overridden with Alpine.js or plain JavaScript, and `Content/js/nopwara-core.js` (about 7 KB minified and gzipped, against roughly 45 KB for jQuery + jquery.validate + unobtrusive + core scripts) replaces core's scripts:
+
+- `nw.post` / `nw.get` (fetch with the anti-forgery token), `nw.html` (inserts server HTML and runs its scripts);
+- client-side validation from the server's `data-val-*` attributes (what jquery.validate.unobtrusive did);
+- `nw.dialog` (native `<dialog>`) instead of jQuery UI dialogs and magnific-popup;
+- `nw.cart` (ajax cart), `nw.catalog` (filters, sorting, paging), product attribute changes, country → state selects;
+- `nopwara-opc.js`, `nopwara-checkout-address.js` and `nopwara-shipping.js` for one-page checkout, the multi-step address pages and the estimate-shipping popup.
+
+Core's global names (`setLocation`, `AjaxCart`, `displayBarNotification`, `Billing`, `Checkout`...) still exist as jQuery-free versions, so core views and plugins that only call them keep working.
+
+**Third-party plugins.** Some plugins ship their own jQuery code (for example nopCommerce's Misc.RFQ, PayPal Commerce and Avalara). `_Root.Head` loads jQuery on a page only when one of the page's scripts uses `$` or `jQuery`, or while reCAPTCHA v3 is on (nopCommerce renders its v3 snippet with jQuery). For plugins whose scripts arrive later by ajax (a checkout payment step, for example), set `nopwarathemesettings.jquerycompat` to `true` in All settings to load jQuery on every page.
+
+A CI check (`.github/lighthouse/no-jquery.py`) fails the build when jQuery code appears in the theme or on a rendered page.
 
 ## Requirements
 

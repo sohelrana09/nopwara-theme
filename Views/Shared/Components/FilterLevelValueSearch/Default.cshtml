@@ -1,0 +1,69 @@
+@*Nopwara: core view with its script rewritten without jQuery*@
+@model FilterLevelValueSearchModel
+
+<form asp-route="@NopRouteNames.Standard.PRODUCT_SEARCH_BY_FILTER_LEVEL_VALUES" method="get">
+    <div class="search-input">
+        <div class="form-fields">
+            <div class="page-title">
+                <h1>@T("Search.FilterLevelValues")</h1>
+            </div>
+            <div class="advanced-search">
+                @if (!Model.HideSearchFilterValue1)
+                {
+                    <div class="inputs">
+                        <label asp-for="fl1id">@T("Enums.Nop.Core.Domain.FilterLevels.FilterLevelEnum.FilterLevel1"):</label>
+                        <select asp-for="fl1id" asp-items="Model.AvailableFilterLevel1Values" class="filter-level-select"
+                                data-trigger="filter-level1-select"
+                                data-url="@(Url.RouteUrl(NopRouteNames.Ajax.GET_FILTER_LEVEL_VALUES))"
+                                data-filterlevel2="#@Html.IdFor(model => model.fl2id)"
+                                data-filterlevel3="#@Html.IdFor(model => model.fl3id)"
+                                data-loading="#filter-levels-loading-progress">
+                        </select>
+                    </div>
+                }
+                @if (!Model.HideSearchFilterValue2)
+                {
+                    <div class="inputs">
+                        <label asp-for="fl2id">@T("Enums.Nop.Core.Domain.FilterLevels.FilterLevelEnum.FilterLevel2"):</label>
+                        <select asp-for="fl2id" asp-items="Model.AvailableFilterLevel2Values" class="filter-level-select"
+                                data-trigger="filter-level2-select"
+                                data-url="@(Url.RouteUrl(NopRouteNames.Ajax.GET_FILTER_LEVEL_VALUES))"
+                                data-filterlevel1="#@Html.IdFor(model => model.fl1id)"
+                                data-filterlevel3="#@Html.IdFor(model => model.fl3id)"
+                                data-loading="#filter-levels-loading-progress">
+                        </select>
+                    </div>
+                }
+                @if (!Model.HideSearchFilterValue3)
+                {
+                    <div class="inputs">
+                        <label asp-for="fl3id">@T("Enums.Nop.Core.Domain.FilterLevels.FilterLevelEnum.FilterLevel3"):</label>
+                        <select asp-for="fl3id" asp-items="Model.AvailableFilterLevel3Values" class="filter-level-select"></select>
+                        <span id="filter-levels-loading-progress" style="display: none;" class="please-wait">@T("Common.Wait")</span>
+                    </div>
+                }
+            </div>
+            <div class="buttons">
+                <button type="button" id="filter-level-values-search" class="button-1 search-button-flv" disabled>@T("Search")</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script asp-location="Footer">
+        //the search button is enabled once every visible filter level has a value
+        function checkFilterSelections() {
+            var allSelected = Array.prototype.every.call(document.querySelectorAll('.filter-level-select'), function (select) {
+                return !select.getClientRects().length || (select.value && select.value !== '0');
+            });
+            document.querySelectorAll('.search-button-flv').forEach(function (button) { button.disabled = !allSelected; });
+        }
+        nw.ready(checkFilterSelections);
+        nw.on('change', '.filter-level-select', checkFilterSelections);
+        nw.on('nw:filled', '.filter-level-select', checkFilterSelections);
+
+        document.getElementById('filter-level-values-search')?.addEventListener('click', function () {
+            var formData = new FormData(this.closest('form'));
+            window.location.href = `@Url.RouteUrl(NopRouteNames.Standard.PRODUCT_SEARCH_BY_FILTER_LEVEL_VALUES)?${new URLSearchParams(formData).toString()}`;
+        });
+</script>

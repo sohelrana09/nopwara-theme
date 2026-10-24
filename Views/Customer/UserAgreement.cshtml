@@ -1,0 +1,30 @@
+﻿@model UserAgreementModel
+@{
+    Layout = "_ColumnsOne";
+
+    //page class
+    NopHtml.AppendPageCssClassParts("html-user-agreement-page");
+}
+<script asp-location="Footer">
+    nw.ready(function () {
+        document.getElementById('agreement-agree').addEventListener('click', toggleContinueButton);
+        toggleContinueButton();
+    });
+    function toggleContinueButton() {
+        document.getElementById('continue-downloading').disabled = !document.getElementById('agreement-agree').checked;
+    }
+</script>
+<div class="page user-agreement-page">
+    <div class="page-title">
+        <h1>@T("DownloadableProducts.UserAgreement")</h1>
+    </div>
+    <div class="page-body">
+        <div class="terms-of-agreement">
+            <input id="agreement-agree" type="checkbox" value="@T("DownloadableProducts.IAgree")" aria-label="@T("DownloadableProducts.IAgree")" />
+            @Html.Raw(Model.UserAgreementText)
+        </div>
+        <div class="buttons">
+            <button type="submit" id="continue-downloading" class="button-1 user-agreement-button" onclick="setLocation('@Url.RouteUrl(NopRouteNames.Standard.GET_DOWNLOAD, new { orderItemId = Model.OrderItemGuid, agree = true })')">@T("Common.Continue")</button>
+        </div>
+    </div>
+</div>

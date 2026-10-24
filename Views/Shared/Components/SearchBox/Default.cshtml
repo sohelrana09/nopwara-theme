@@ -27,8 +27,8 @@
         showImages = Model.ShowProductImagesInSearchAutoComplete,
         thumbSize = Model.AutoCompleteSearchThumbPictureSize,
         //nopCommerce 5.00 search history: recent terms when the box is empty, each with a remove button
-        historyUrl = Model.SearchHistoryEnabled ? Url.RouteUrl(NopRouteNames.Ajax.PRODUCT_SEARCH_HISTORY_AUTOCOMPLETE) : null,
-        deleteHistoryUrl = Model.SearchHistoryEnabled ? Url.RouteUrl(NopRouteNames.Ajax.DELETE_PRODUCT_SEARCH_TERMS) : null
+        historyUrl = Model.SearchHistoryEnabled && Model.AutoCompleteEnabled && !instantSearchActive ? Url.RouteUrl(NopRouteNames.Ajax.PRODUCT_SEARCH_HISTORY_AUTOCOMPLETE) : null,
+        deleteHistoryUrl = Model.SearchHistoryEnabled && Model.AutoCompleteEnabled && !instantSearchActive ? Url.RouteUrl(NopRouteNames.Ajax.DELETE_PRODUCT_SEARCH_TERMS) : null
     });
 }
 

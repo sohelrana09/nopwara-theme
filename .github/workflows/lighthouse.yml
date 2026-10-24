@@ -36,6 +36,10 @@ jobs:
         with:
           path: theme
 
+      #the theme must not use jQuery (see README "No jQuery"): fail on jQuery calls in views and scripts
+      - name: No jQuery in the theme
+        run: python3 theme/.github/lighthouse/no-jquery.py source theme
+
       - name: nopCommerce source
         run: |
           git init -q nop
@@ -70,6 +74,10 @@ jobs:
           for page in / /notebooks /apple-macbook-pro "/search?q=apple"; do
             curl -s -o /dev/null -w "%{http_code} $page\n" -A "Mozilla/5.0 Chrome/130.0" "http://localhost:5080$page"
           done
+
+      #...and no rendered storefront page may load jQuery or run inline jQuery code
+      - name: No jQuery on rendered pages
+        run: python3 theme/.github/lighthouse/no-jquery.py pages http://localhost:5080 / /notebooks /apple-macbook-pro "/search?q=apple" /login /register /contactus
 
       - name: Lighthouse CI
         run: npx --yes @lhci/cli@0.14.0 autorun --config=theme/.github/lighthouse/lighthouserc.json

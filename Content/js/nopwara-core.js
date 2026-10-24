@@ -412,6 +412,39 @@
         return api;
     };
 
+    /*
+     * An element already on the page shown as a dialog (the core markup of wishlist modals, terms boxes...):
+     * nw.elementDialog.show(id) moves it into nw.dialog and puts it back, hidden, when the dialog closes.
+     */
+    nw.elementDialog = (function () {
+        var open = {};
+        return {
+            show: function (id) {
+                var content = document.getElementById(id);
+                if (!content || open[id])
+                    return;
+                var home = content.parentNode, next = content.nextSibling, title = content.getAttribute('title');
+                content.removeAttribute('title');
+                open[id] = nw.dialog({
+                    title: title,
+                    onClose: function () {
+                        delete open[id];
+                        content.style.display = 'none';
+                        if (title)
+                            content.setAttribute('title', title);
+                        home.insertBefore(content, next && next.parentNode === home ? next : null);
+                    }
+                });
+                content.style.display = '';
+                open[id].body.appendChild(content);
+            },
+            close: function (id) {
+                if (open[id])
+                    open[id].close();
+            }
+        };
+    })();
+
     function popupMessages(message) {
         var list = typeof message === 'string' ? [message] : (message || []);
         //messages are server HTML (as in core): not encoded
@@ -433,7 +466,8 @@
     /*
      * Ajax cart (replaces core AjaxCart). nw.cart.init(...) is called by the header links view.
      * Every response goes through success(): header counts, flyout cart, toast/popup, redirect; then
-     * "nopwara:cart-updated" (always) and "nopwara:product-added" (on success) are dispatched on window.
+     * "nopwara:cart-updated" (always) and "nopwara:product-added" (on success) are dispatched on window, and
+     * "nopwara:cart-redirect" (cancelable) before following response.redirect.
      */
     var cart = nw.cart = {
         busy: false,
@@ -497,6 +531,9 @@
                 return false;
             }
             if (response.redirect) {
+                //cancelable: e.g. the quick view plugin opens the product in its modal instead of going to the product page
+                if (!window.dispatchEvent(new CustomEvent('nopwara:cart-redirect', { detail: response, cancelable: true })))
+                    return false;
                 location.href = response.redirect;
                 return true;
             }

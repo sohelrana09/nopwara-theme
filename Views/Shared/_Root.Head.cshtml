@@ -1,44 +1,46 @@
 @*
-    Nopwara: copy of the core layout (Views/Shared/_Root.Head.cshtml, nopCommerce 5.00) that loads jQuery UI on demand and
-    skips jQuery Migrate. Keep it in sync with core when upgrading nopCommerce: only the script registrations differ.
+    Nopwara: copy of the core layout (Views/Shared/_Root.Head.cshtml, nopCommerce 5.00) that loads no jQuery: no jQuery,
+    jquery.validate, jQuery UI, jQuery Migrate or core public.*.js. Content/js/nopwara-core.js (registered in Head.cshtml)
+    replaces them. Keep it in sync with core when upgrading nopCommerce: only the script registrations differ.
 *@
 @using Nop.Core.Domain.Catalog
 @using Nop.Core.Domain.Common
-@using Nop.Core.Domain.FilterLevels
+@using Nop.Core.Domain.Security
 @using Nop.Core.Domain.Seo
 @using Nop.Services.Security
 @using Nop.Core.Events
 
+@inject CaptchaSettings captchaSettings
 @inject CatalogSettings catalogSettings
 @inject CommonSettings commonSettings
-@inject FilterLevelSettings filterLevelSettings
 @inject IEventPublisher eventPublisher
 @inject IPermissionService permissionService
 @inject SeoSettings seoSettings
-@inject Nop.Services.Themes.IThemeContext themeContext
+@inject Nop.Services.Configuration.ISettingService settingService
+@inject Nop.Core.IStoreContext storeContext
 
 @{
     if (catalogSettings.DisplayAllPicturesOnCatalogPages)
     {
         NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/swiper/swiper-bundle.min.js");
     }
-    if (filterLevelSettings.FilterLevelEnabled && filterLevelSettings.DisplayOnHomePage)
+    /*
+     * jQuery only when something outside the theme still needs it:
+     *  - a footer/head inline script on this page uses $ or jQuery (third-party plugins such as Misc.RFQ, PayPal Commerce,
+     *    Avalara). This layout renders last, after the view, the inner layouts and every widget, so their scripts are known;
+     *  - reCAPTCHA v3 is on (nopCommerce renders its v3 snippet with jQuery);
+     *  - nopwarathemesettings.jquerycompat = true, for plugins whose scripts arrive later by ajax (e.g. a payment step).
+     * Nothing in the theme or the Nopwara plugins uses jQuery.
+     */
+    var registeredScripts = NopHtml.GenerateInlineScripts(ResourceLocation.Footer).ToString() + NopHtml.GenerateInlineScripts(ResourceLocation.Head).ToString();
+    var jqueryCompat = System.Text.RegularExpressions.Regex.IsMatch(registeredScripts, @"(?<![\w$.])(?:\$|jQuery)\s*[(.]")
+        || (captchaSettings.Enabled && captchaSettings.CaptchaType == CaptchaType.ReCaptchaV3)
+        || await settingService.GetSettingByKeyAsync("nopwarathemesettings.jquerycompat", false, (await storeContext.GetCurrentStoreAsync()).Id, loadSharedValueIfNotFound: true);
+    if (jqueryCompat)
     {
-        NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/js/public.filterlevelselect.js");
+        //rendered before every other footer script (Append* inserts at the front)
+        NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery/jquery.min.js"); //no-jquery: allow (compatibility)
     }
-    NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/js/public.countryselect.js");
-    NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/js/public.ajaxcart.js");
-    NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/js/public.common.js");
-    //Nopwara: jQuery Migrate only while its logging is on (the theme and core scripts run on plain jQuery 3)
-    if (commonSettings.JqueryMigrateScriptLoggingActive)
-    {
-        NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery-migrate/jquery-migrate.js");
-    }
-    //Nopwara: jQuery UI loads on demand (Content/js/nopwara-jqueryui.js) instead of on every page
-    NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{await themeContext.GetWorkingThemeNameAsync()}/Content/js/nopwara-jqueryui.js");
-    NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js");
-    NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery-validation/jquery.validate.min.js");
-    NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery/jquery.min.js");
 
     //custom tag(s);
     if (!string.IsNullOrEmpty(seoSettings.CustomHeadTags))

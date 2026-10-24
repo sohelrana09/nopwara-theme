@@ -1,0 +1,76 @@
+﻿@model TopicModel
+@if (Model.IsPasswordProtected)
+{
+<script asp-location="Footer">
+        nw.ready(function () {
+            var topic = document.getElementById('ph-topic-@Model.Id');
+            var passwordBlock = document.getElementById('ph-password-@Model.Id');
+            var password = document.getElementById('password-@Model.Id');
+            var error = document.getElementById('password-error-@Model.Id');
+
+            topic.style.display = 'none';
+            password.select();
+            password.focus();
+
+            document.getElementById('button-password-@Model.Id').addEventListener('click', function (e) {
+                e.preventDefault();
+                nw.post('@Url.RouteUrl(NopRouteNames.Ajax.TOPIC_AUTHENTICATE)', {
+                    id: document.getElementById('topic-@Model.Id').value,
+                    password: password.value
+                }).then(function (data) {
+                    if (data.Authenticated) {
+                        var title = topic.querySelector('#ph-title-@Model.Id h2');
+                        title.innerHTML = data.Title;
+                        if (title.textContent.length == 0) {
+                            document.getElementById('ph-title-@Model.Id').style.display = 'none';
+                        }
+                        //injected forms are validated by the theme runtime without re-parsing
+                        nw.html(topic.querySelector('.topic-block-body'), data.Body);
+                        passwordBlock.style.display = 'none';
+                        topic.style.display = '';
+                    } else {
+                        error.textContent = data.Error;
+                        error.style.display = '';
+                        password.select();
+                        password.focus();
+                    }
+                });
+            });
+        });
+</script>
+    <div class="topic-password" id="ph-password-@Model.Id">
+        <form asp-route="@NopRouteNames.Ajax.TOPIC_AUTHENTICATE" method="post" autocomplete="off">
+            <input asp-for="Id" id="topic-@Model.Id" type="hidden"/>
+            <label for="password-@(Model.Id)" class="enter-password-title">
+                @T("Topic.EnterPassword")
+            </label>
+            <div class="enter-password-form">
+                <input name="password" type="password" id="password-@(Model.Id)" />
+                <button type="submit" id="button-password-@Model.Id" class="button-1 topic-password-button">@T("Topic.Button")</button>
+            </div>
+            <div class="password-error" id="password-error-@Model.Id" style="display: none;"></div>
+        </form>
+    </div>
+    <div class="topic-block" id="ph-topic-@Model.Id">
+        <div class="topic-block-title" id="ph-title-@Model.Id">
+            <h2>@Model.Title</h2>
+        </div>
+        <div class="topic-block-body">
+            @Html.Raw(Model.Body)
+        </div>
+    </div>
+}
+else
+{
+    <div class="topic-block">
+        @if (!string.IsNullOrEmpty(Model.Title))
+        {
+            <div class="topic-block-title">
+                <h2>@Model.Title</h2>
+            </div>
+        }
+        <div class="topic-block-body">
+            @Html.Raw(Model.Body)
+        </div>
+    </div>
+}
