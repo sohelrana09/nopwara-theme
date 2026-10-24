@@ -25,6 +25,8 @@
     NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/nopwara.js");
     //catalog navigation (history, load more, price range, filter chips); inert on pages without CatalogProducts
     NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/nopwara-catalog.js");
+    //runtime (requests, validation, dialogs, cart, catalog): appended last so it renders before every other script
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Themes/{themeName}/Content/js/nopwara-core.js");
 
     //keep vendor CSS needed by core views that are not overridden yet
     if (catalogSettings.DisplayAllPicturesOnCatalogPages)

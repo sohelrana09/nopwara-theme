@@ -36,18 +36,8 @@
                 <label asp-for="EnteredQuantity" asp-postfix=":" class="qty-label sr-only"></label>
                 @if (Model.AllowedQuantities.Count > 0)
                 {
-                    <select asp-for="EnteredQuantity" asp-items="Model.AllowedQuantities" id="product_enteredQuantity_@Model.ProductId" class="qty-dropdown rounded-md border border-slate-300 bg-white px-3 text-sm" aria-label=@T("Products.Qty.AriaLabel")></select>
-                    <script asp-location="Footer">
-                        $(function() {
-                            $("#product_enteredQuantity_@Model.ProductId").on("change", function () {
-                                var data = {
-                                    productId: @Model.ProductId,
-                                    quantity: $('#product_enteredQuantity_@Model.ProductId').find(":selected").text()
-                                };
-                                $(document).trigger({ type: "product_quantity_changed", changedData: data });
-                            });
-                        });
-                    </script>
+                    <select asp-for="EnteredQuantity" asp-items="Model.AllowedQuantities" id="product_enteredQuantity_@Model.ProductId" class="qty-dropdown rounded-md border border-slate-300 bg-white px-3 text-sm" aria-label=@T("Products.Qty.AriaLabel")
+                            onchange="window.dispatchEvent(new CustomEvent('nopwara:quantity-changed', { detail: { productId: @Model.ProductId, quantity: this.options[this.selectedIndex].text } }))"></select>
                 }
                 else
                 {
@@ -61,28 +51,11 @@
                              }
                          }">
                         <button type="button" class="px-3 text-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900" @@click="change(-1)" aria-label="-">&minus;</button>
-                        <input asp-for="EnteredQuantity" id="product_enteredQuantity_@Model.ProductId" x-ref="qty" class="qty-input w-12 border-x border-slate-200 text-center text-sm outline-none" type="text" inputmode="numeric" aria-label=@T("Products.Qty.AriaLabel") />
+                        <input asp-for="EnteredQuantity" id="product_enteredQuantity_@Model.ProductId" x-ref="qty" class="qty-input w-12 border-x border-slate-200 text-center text-sm outline-none" type="text" inputmode="numeric" aria-label=@T("Products.Qty.AriaLabel")
+                               oninput="window.dispatchEvent(new CustomEvent('nopwara:quantity-changed', { detail: { productId: @Model.ProductId, quantity: this.value } }))"
+                               x-on:keydown.enter.prevent="document.getElementById('add-to-cart-button-@Model.ProductId')?.click()" />
                         <button type="button" class="px-3 text-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900" @@click="change(1)" aria-label="+">+</button>
                     </div>
-                    <script asp-location="Footer">
-                        //when a customer clicks 'Enter' button we submit the "add to cart" button (if visible)
-                        $(function() {
-                            $("#@Html.IdFor(model => model.EnteredQuantity)").on("keydown", function(event) {
-                                if (event.keyCode == 13) {
-                                    $("#add-to-cart-button-@Model.ProductId").trigger("click");
-                                    return false;
-                                }
-                            });
-
-                            $("#product_enteredQuantity_@Model.ProductId").on("input propertychange paste", function () {
-                                var data = {
-                                    productId: @Model.ProductId,
-                                    quantity: $('#product_enteredQuantity_@Model.ProductId').val()
-                                };
-                                $(document).trigger({ type: "product_quantity_changed", changedData: data });
-                            });
-                        });
-                    </script>
                 }
                 @{
                     var addToCartText = "";
@@ -102,7 +75,7 @@
                             addToCartText = T("ShoppingCart.PreOrder").Text;
                         }
                     }
-                    <button type="button" id="add-to-cart-button-@Model.ProductId" class="add-to-cart-button btn btn-primary flex-1 py-3 text-base" data-productid="@Model.ProductId" onclick="AjaxCart.addproducttocart_details('@Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_CART_DETAILS, new { productId = Model.ProductId, shoppingCartTypeId = (int)ShoppingCartType.ShoppingCart })', '#product-details-form');return false;">
+                    <button type="button" id="add-to-cart-button-@Model.ProductId" class="add-to-cart-button btn btn-primary flex-1 py-3 text-base" data-productid="@Model.ProductId" onclick="nw.cart.details('@Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_CART_DETAILS, new { productId = Model.ProductId, shoppingCartTypeId = (int)ShoppingCartType.ShoppingCart })', '#product-details-form');return false;">
                         <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><use href="@(Url.Content("~/Themes/Nopwara/Content/icons.svg"))?v=c9d60074#i-d17041" /></svg>
                         @addToCartText
                     </button>

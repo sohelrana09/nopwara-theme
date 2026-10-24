@@ -83,6 +83,28 @@
   .nw-panel-motion {
     @apply lg:invisible lg:translate-y-1 lg:opacity-0 lg:transition-[opacity,transform,visibility] lg:delay-100 lg:duration-150 lg:ease-out lg:group-hover:visible lg:group-hover:translate-y-0 lg:group-hover:opacity-100 lg:group-hover:delay-0 lg:group-focus-within:visible lg:group-focus-within:translate-y-0 lg:group-focus-within:opacity-100 lg:group-focus-within:delay-0 lg:group-data-open:visible lg:group-data-open:translate-y-0 lg:group-data-open:opacity-100 lg:group-data-open:delay-0;
   }
+  /* nw.dialog() (Content/js/nopwara-core.js): native <dialog> replacing jQuery UI dialogs and popups */
+  .nw-dialog {
+    @apply fixed inset-0 m-auto max-h-[90vh] w-[min(36rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white p-0 text-slate-700 shadow-2xl backdrop:bg-slate-950/50 open:flex open:flex-col;
+  }
+  .nw-dialog-head {
+    @apply flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-5 py-3;
+  }
+  .nw-dialog-title {
+    @apply text-base font-semibold text-slate-900 empty:hidden;
+  }
+  .nw-dialog-close {
+    @apply -mr-2 ml-auto rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 [&>svg]:size-5;
+  }
+  .nw-dialog-body {
+    @apply overflow-y-auto px-5 py-4 text-sm [&_p+p]:mt-2;
+  }
+  .nw-dialog-loading {
+    @apply min-h-24 animate-pulse bg-slate-50;
+  }
+  .nw-dialog.success .nw-dialog-body { @apply text-emerald-800; }
+  .nw-dialog.error .nw-dialog-body { @apply text-red-700; }
+  .nw-dialog.warning .nw-dialog-body { @apply text-amber-800; }
   /* mobile menu: root items, child links, children with their own level */
   .nw-mtop {
     @apply flex w-full items-center gap-1.5 px-4 py-3.5 text-left text-base font-semibold text-slate-800 hover:bg-slate-50;
@@ -662,32 +684,20 @@
     @apply flex items-center text-xs text-slate-700;
   }
 
-  /* estimate shipping trigger (popup itself is core magnific-popup markup) */
+  /* estimate shipping trigger */
   .common-buttons .estimate-shipping-button {
     @apply inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50;
   }
 
-  /* estimate shipping popup (core _EstimateShippingPopUp + magnific-popup; product page and cart) */
-  .mfp-bg {
-    @apply bg-slate-950/50! opacity-100! backdrop-blur-[2px];
+  /* estimate shipping popup (core _EstimateShippingPopUp in a native <dialog>, Content/js/nopwara-shipping.js; product page and cart) */
+  .mfp-hide {
+    @apply hidden!;
   }
-  .mfp-container {
-    @apply px-4!;
+  .estimate-shipping-dialog {
+    @apply w-[min(42rem,calc(100vw-2rem))];
   }
   .estimate-shipping-popup {
-    @apply relative mx-auto my-6 w-full max-w-2xl rounded-2xl bg-white p-6 text-left text-sm text-slate-700 shadow-2xl sm:p-8;
-  }
-  .estimate-shipping-popup-zoom-in .mfp-with-anim {
-    @apply translate-y-2 scale-95 opacity-0 transition duration-200 ease-out;
-  }
-  .estimate-shipping-popup-zoom-in.mfp-ready .mfp-with-anim {
-    @apply translate-y-0 scale-100 opacity-100;
-  }
-  .estimate-shipping-popup-zoom-in.mfp-removing .mfp-with-anim {
-    @apply opacity-0;
-  }
-  .estimate-shipping-popup .mfp-close {
-    @apply absolute! right-3! top-3! flex! size-9! items-center! justify-center! rounded-full! text-2xl! leading-none! text-slate-400! opacity-100! hover:bg-slate-100! hover:text-slate-900!;
+    @apply relative text-left text-sm text-slate-700;
   }
   .estimate-shipping-popup .ship-to-title,
   .estimate-shipping-popup .choose-shipping-title {

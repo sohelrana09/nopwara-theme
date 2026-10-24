@@ -1,0 +1,134 @@
+@model ProductDetailsModel.ProductEstimateShippingModel
+@*Nopwara: core view with the script on nwEstimateShipping (Content/js/nopwara-shipping.js), no jQuery*@
+
+@if (Model.Enabled)
+{
+    <div class="product-estimate-shipping">
+        <a href="#estimate-shipping-popup-@Model.ProductId"
+           id="open-estimate-shipping-popup-@Model.ProductId"
+           class="open-estimate-shipping-popup"
+           data-effect="estimate-shipping-popup-zoom-in">
+        </a>
+        <div id="estimate-shipping-popup-@Model.ProductId" class="estimate-shipping-popup mfp-with-anim mfp-hide">
+            @await Html.PartialAsync("_EstimateShippingPopUp", Model)
+        </div>
+    </div>
+
+    <script asp-location="Footer">
+
+        nw.ready(function() {
+            var popUp = {};
+            var reloadPopUp = false;
+            var initialized = false;
+
+            var settings = {
+                opener: '#open-estimate-shipping-popup-@Model.ProductId',
+                form: '#product-details-form',
+                contentEl: '#estimate-shipping-popup-@Model.ProductId',
+                countryEl: '#@Html.IdFor(model => model.CountryId)',
+                stateProvinceEl: '#@Html.IdFor(model => model.StateProvinceId)',
+                zipPostalCodeEl: '#@Html.IdFor(model => model.ZipPostalCode)',
+                useCity: @Model.UseCity.ToString().ToLowerInvariant(),
+                cityEl: '#@Html.IdFor(model => model.City)',
+                requestDelay: @Model.RequestDelay,
+                localizedData: {
+                    noShippingOptionsMessage: '@JavaScriptEncoder.Default.Encode(T("Shipping.EstimateShippingPopUp.NoShippingOptions").Text)',
+                    countryErrorMessage: '@JavaScriptEncoder.Default.Encode(T("Shipping.EstimateShipping.Country.Required").Text)',
+                    zipPostalCodeErrorMessage: '@JavaScriptEncoder.Default.Encode(T("Shipping.EstimateShipping.ZipPostalCode.Required").Text)',
+                    cityErrorMessage: '@JavaScriptEncoder.Default.Encode(T("Shipping.EstimateShipping.City.Required").Text)',
+                },
+                urlFactory: function (address) {
+                    var params = new URLSearchParams(JSON.parse(JSON.stringify({
+                        CountryId: address.countryId,
+                        StateProvinceId: address.stateProvinceId,
+                        ZipPostalCode: address.zipPostalCode,
+                        City: address.city
+                    }))).toString();
+
+                    return '@Html.Raw(Url.RouteUrl(NopRouteNames.Ajax.PRODUCT_ESTIMATE_SHIPPING, new { ProductId = Model.ProductId }))&' + params;
+                },
+                handlers: {
+                    openPopUp: function () {
+                        if (reloadPopUp) {
+                            var address = popUp.getShippingAddress();
+                            if (popUp.validateAddress(address)) {
+                                popUp.getShippingOptions(address);
+                            } else {
+                                popUp.clearShippingOptions();
+                            }
+
+                            reloadPopUp = false;
+                        }
+                    },
+                    load: function () {
+                        if (!popUp.isOpen()) {
+                            document.getElementById('open-estimate-shipping-popup-@Model.ProductId').innerHTML =
+                                '<div class="shipping-title"><span class="shipping-price-title">' + nw.encode('@JavaScriptEncoder.Default.Encode(T("Products.EstimateShipping.PriceTitle").Text)') + '</span><span class="shipping-loading"></span></div>';
+                        }
+                    },
+                    success: function (address, response) {
+                        // initialize on load only once
+                        var option = popUp.getActiveShippingOption();
+                        popUp.selectShippingOption(option);
+
+                        initialized = true;
+                        popUp.settings.handlers.success = undefined;
+                    },
+                    error: function () {
+                        popUp.selectShippingOption();
+                    },
+                    selectedOption: function (option) {
+                        var opener = document.getElementById('open-estimate-shipping-popup-@Model.ProductId');
+                        if (option && option.provider && option.price && popUp.validateAddress(option.address)) {
+                            var address = option.address.countryName + ', ' + (option.address.stateProvinceName ? option.address.stateProvinceName + ', ' : '') + (popUp.settings.useCity ? option.address.city : option.address.zipPostalCode);
+                            var html = '<div class="shipping-title"><span class="shipping-price-title">' + nw.encode('@JavaScriptEncoder.Default.Encode(T("Products.EstimateShipping.PriceTitle").Text)') + '</span><span class="shipping-price">' + nw.encode(option.price) + '</span></div>' +
+                                '<div class="estimated-delivery"><div class="shipping-address"><span>' + nw.encode('@JavaScriptEncoder.Default.Encode(T("Products.EstimateShipping.ToAddress").Text) ' + address + ' @JavaScriptEncoder.Default.Encode(T("Products.EstimateShipping.ViaProvider").Text) ' + option.provider) + '</span><i class="arrow-down"></i></div>';
+                            if (option.deliveryDate && option.deliveryDate !== '-')
+                                html += '<div class="shipping-date">' + nw.encode('@JavaScriptEncoder.Default.Encode(T("Products.EstimateShipping.EstimatedDeliveryPrefix").Text) ' + option.deliveryDate) + '</div>';
+                            opener.innerHTML = html + '</div>';
+                        } else {
+                            opener.innerHTML = '<span>' + nw.encode('@JavaScriptEncoder.Default.Encode(T("Products.EstimateShipping.NoSelectedShippingOption").Text)') + '</span><i class="arrow-down"></i>';
+                        }
+                    }
+                }
+            };
+            popUp = nwEstimateShipping(settings);
+            popUp.init();
+
+            var initialLoad = function () {
+                var address = popUp.getShippingAddress();
+                if (popUp.validateAddress(address))
+                    popUp.getShippingOptions(address);
+                else
+                    popUp.selectShippingOption();
+            };
+            initialLoad();
+
+            var attributeChangedHandler = function (e) {
+                var productId = e.detail.productId;
+                if (productId === @Model.ProductId) {
+                    if (popUp.params.selectedShippingOption) {
+                        var address = popUp.params.selectedShippingOption.address;
+                        var enteredAddress = popUp.getShippingAddress();
+
+                        if (!popUp.addressesAreEqual(address, enteredAddress))
+                            reloadPopUp = true;
+
+                        popUp.getShippingOptions(address);
+                    } else {
+                        if (!initialized)
+                            initialLoad();
+                        else
+                            reloadPopUp = true;
+                    }
+                }
+            };
+            // Prevent double init on load. If product has attributes then trigger is fires when page is loaded and attributes are loaded.
+            setTimeout(function () {
+                window.addEventListener('nopwara:attributes-changed', attributeChangedHandler);
+            }, 500);
+            window.addEventListener('nopwara:quantity-changed', attributeChangedHandler);
+        });
+
+    </script>
+}

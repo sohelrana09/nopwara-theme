@@ -34,26 +34,6 @@
                 </a>
             }
         </div>
-        <script asp-location="Footer">
-            $(function() {
-                var $viewModeEls = $('[data-viewmode]');
-                $viewModeEls.on('click', function () {
-                    if (!$(this).hasClass('selected')) {
-                        $viewModeEls.toggleClass('selected');
-                        CatalogProducts.getProducts();
-                    }
-                    return false;
-                });
-
-                $(CatalogProducts).on('before', function (e) {
-                    var $viewModeEl = $('[data-viewmode].selected');
-                    if ($viewModeEl) {
-                        e.payload.urlBuilder
-                            .addParameter('viewmode', $viewModeEl.data('viewmode'));
-                    }
-                });
-            });
-        </script>
     }
 
     @if (Model.AllowProductSorting)
@@ -62,19 +42,6 @@
             <label for="products-orderby">@T("Catalog.OrderBy")</label>
             @Html.DropDownList("products-orderby", Model.AvailableSortOptions, new { aria_label = T("Catalog.OrderBy.Label"), @class = selectCss })
         </div>
-        <script asp-location="Footer">
-            $(function() {
-                var $orderByEl = $('#products-orderby');
-                $orderByEl.on('change', function () {
-                    CatalogProducts.getProducts();
-                });
-
-                $(CatalogProducts).on('before', function (e) {
-                    e.payload.urlBuilder
-                        .addParameter('orderby', $orderByEl.val());
-                });
-            });
-        </script>
     }
 
     @if (Model.AllowCustomersToSelectPageSize)
@@ -84,18 +51,5 @@
             @Html.DropDownList("products-pagesize", Model.PageSizeOptions, new { aria_label = T("Catalog.PageSize.Label"), @class = selectCss })
             <span>@T("Catalog.PageSize.PerPage")</span>
         </div>
-        <script asp-location="Footer">
-            $(function() {
-                var $pageSizeEl = $('#products-pagesize');
-                $pageSizeEl.on('change', function () {
-                    CatalogProducts.getProducts();
-                });
-
-                $(CatalogProducts).on('before', function (e) {
-                    e.payload.urlBuilder
-                        .addParameter('pagesize', $pageSizeEl.val());
-                });
-            });
-        </script>
     }
 </div>

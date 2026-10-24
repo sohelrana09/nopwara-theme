@@ -147,6 +147,108 @@
          * handler (_ProductAttributes.cshtml) rewrites their src/href directly with jQuery,
          * so this component updates the DOM imperatively instead of binding :src.
          */
+        /*
+         * Header search box (Views/Shared/Components/SearchBox/Default.cshtml): submit (minimum length, category → advanced
+         * search) and core's autocomplete as a fallback when the Nopwara instant search plugin isn't active.
+         */
+        window.Alpine.data('nopwaraSearchBox', function (o) {
+            var cache = new Map();
+            var timer = null;
+            return {
+                open: false,
+                items: [],
+                showLink: false,
+                active: -1,
+                showImages: o.showImages,
+                thumbSize: o.thumbSize,
+                searchUrl: o.searchUrl,
+
+                submit: function (form) {
+                    var term = this.$refs.term;
+                    if (o.minLength > 0 && !term.value) {
+                        window.alert(o.emptyMessage);
+                        term.focus();
+                        return;
+                    }
+                    var data = new FormData(form);
+                    if (o.categories) {
+                        var category = data.get('cid');
+                        if (category && category !== '0') {
+                            data.append('advs', 'true');
+                            data.append('isc', 'true');
+                        }
+                    }
+                    location.href = o.searchUrl + '?' + new URLSearchParams(data).toString();
+                },
+
+                query: function () {
+                    if (!o.autocomplete && !o.historyUrl)
+                        return;
+                    var self = this;
+                    clearTimeout(timer);
+                    timer = setTimeout(function () { self.load(); }, 500);
+                },
+
+                load: function () {
+                    var term = this.$refs.term.value.trim().toLowerCase();
+                    var self = this;
+                    var show = function (data) {
+                        self.items = data || [];
+                        self.showLink = self.items.some(function (i) { return i.showlinktoresultsearch; });
+                        self.active = -1;
+                        self.open = self.items.length > 0;
+                    };
+                    //nopCommerce 5.00: the shopper's recent search terms while the box is empty
+                    if (!term && o.historyUrl) {
+                        window.nw.get(o.historyUrl).then(function (data) {
+                            if (!self.$refs.term.value.trim())
+                                show(data);
+                        });
+                        return;
+                    }
+                    if (term.length < o.minLength || !term) {
+                        this.open = false;
+                        return;
+                    }
+                    var query = { term: term, categoryId: this.$refs.category ? this.$refs.category.value : 0 };
+                    var key = JSON.stringify(query);
+                    if (cache.has(key)) {
+                        show(cache.get(key));
+                        return;
+                    }
+                    window.nw.get(o.autocompleteUrl, query).then(function (data) {
+                        cache.set(key, data);
+                        if (self.$refs.term.value.trim().toLowerCase() === term)
+                            show(data);
+                    });
+                },
+
+                move: function (delta) {
+                    if (!this.open || !this.items.length)
+                        return;
+                    this.active = (this.active + delta + this.items.length) % this.items.length;
+                },
+
+                itemUrl: function (item) {
+                    return item.IsKeyword ? o.searchUrl + '?q=' + encodeURIComponent(item.label) : item.producturl;
+                },
+
+                removeTerm: function (item) {
+                    var self = this;
+                    window.nw.post(o.deleteHistoryUrl, { term: item.label }).then(function () { self.load(); });
+                },
+
+                pick: function (e) {
+                    var item = this.open && this.items[this.active];
+                    if (!item)
+                        return;
+                    e.preventDefault();
+                    this.$refs.term.value = item.label;
+                    location.href = this.itemUrl(item);
+                }
+            };
+        });
+
         window.Alpine.data('nopwaraGallery', function (dataElementId, zoomEnabled) {
             var ZOOM = 2.5, MAX_ZOOM = 4;
             return {

@@ -87,24 +87,24 @@
             }
             @await Html.PartialAsync("_CatalogProducts", Model.CatalogProductsModel, catalogProductsViewData)
             <script asp-location="Footer">
-                $(function() {
-                    $(CatalogProducts).on('before', function (e) {
-                        var isAdvanced = $('#@Html.IdFor(model => model.advs)').is(':checked');
+                nw.catalog.on('before', function (e) {
+                    var value = function (id) { var el = document.getElementById(id); return el ? el.value : ''; };
+                    var checked = function (id) { var el = document.getElementById(id); return !!(el && el.checked); };
+                    var isAdvanced = checked('@Html.IdFor(model => model.advs)');
 
-                        e.payload.urlBuilder
-                            .addParameter('q', $('#@Html.IdFor(model => model.q)').val())
-                            .addParameter('advs', isAdvanced);
+                    e.detail.urlBuilder
+                        .addParameter('q', value('@Html.IdFor(model => model.q)'))
+                        .addParameter('advs', isAdvanced);
 
-                        if (isAdvanced) {
-                            e.payload.urlBuilder
-                                .addParameter('cid', $('#@Html.IdFor(model => model.cid)').val())
-                                .addParameter('isc', $('#@Html.IdFor(model => model.isc)').is(':checked'))
-                                .addParameter('mid', $('#@Html.IdFor(model => model.mid)').val())
-                                .addParameter('vid', $('#@Html.IdFor(model => model.vid)').val())
-                                .addParameter('sid', $('#@Html.IdFor(model => model.sid)').is(':checked'))
-                                .addParameter('sit', $('#@Html.IdFor(model => model.sit)').is(':checked'));
-                        }
-                    });
+                    if (isAdvanced) {
+                        e.detail.urlBuilder
+                            .addParameter('cid', value('@Html.IdFor(model => model.cid)'))
+                            .addParameter('isc', checked('@Html.IdFor(model => model.isc)'))
+                            .addParameter('mid', value('@Html.IdFor(model => model.mid)'))
+                            .addParameter('vid', value('@Html.IdFor(model => model.vid)'))
+                            .addParameter('sid', checked('@Html.IdFor(model => model.sid)'))
+                            .addParameter('sit', checked('@Html.IdFor(model => model.sit)'));
+                    }
                 });
             </script>
         </div>

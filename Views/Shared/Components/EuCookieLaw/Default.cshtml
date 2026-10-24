@@ -1,0 +1,12 @@
+@*Nopwara: core cookie bar (same ids) as an Alpine component; "OK" posts with nw.post (no jQuery)*@
+<div id="eu-cookie-bar-notification" class="eu-cookie-bar-notification fixed inset-x-4 bottom-4 z-[70] mx-auto max-w-2xl rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-xl sm:p-5"
+     x-data="{ open: true }" x-show="open" x-transition.opacity role="dialog" aria-live="polite">
+    <div class="content flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div class="text flex-1">@T("EUCookieLaw.Description2")</div>
+        <div class="buttons-more flex shrink-0 items-center gap-4">
+            <a class="learn-more font-medium text-primary-700 hover:underline" href="@await NopUrl.RouteTopicUrlAsync("privacyinfo")">@T("EUCookieLaw.LearnMore")</a>
+            <button type="button" class="ok-button button-1 btn btn-primary px-5" id="eu-cookie-ok"
+                    @@click="nw.post('@Url.RouteUrl(NopRouteNames.Ajax.EU_COOKIE_LAW_ACCEPT)').then(() => open = false).catch(() => alert('Cannot store value'))">@T("Common.OK")</button>
+        </div>
+    </div>
+</div>

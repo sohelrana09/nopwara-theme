@@ -1,14 +1,47 @@
 @model NewsLetterBoxModel
-@*Nopwara: markup restyled only; ids and the jQuery subscribe script below are unchanged from core*@
-<div class="newsletter space-y-3" role="form">
+@*Nopwara: ids unchanged from core; subscribing is an Alpine component posting with nw.post (no jQuery)*@
+<div class="newsletter space-y-3" role="form"
+     x-data="{
+         busy: false,
+         done: false,
+         result: '',
+         showResult: false,
+         captcha() {
+             if (!@Model.DisplayCaptcha.ToString().ToLowerInvariant()) return Promise.resolve('');
+             if (@Model.IsReCaptchaV3.ToString().ToLowerInvariant())
+                 return new Promise((resolve) => grecaptcha.ready(() => grecaptcha.execute('@Model.ReCaptchaPublicKey', { action: 'SubscribeNewsletter' }).then(resolve)));
+             const box = this.$root.querySelector('.captcha-box textarea[name=g-recaptcha-response]');
+             return Promise.resolve(box ? box.value : '');
+         },
+         async subscribe() {
+             if (this.busy) return;
+             const unsubscribe = this.$root.querySelector('#newsletter_unsubscribe');
+             this.busy = true;
+             try {
+                 const data = await nw.post('@(Url.RouteUrl(NopRouteNames.Ajax.SUBSCRIBE_NEWSLETTER))', {
+                     subscribe: unsubscribe && unsubscribe.checked ? 'false' : 'true',
+                     email: this.$refs.email.value,
+                     'g-recaptcha-response': await this.captcha()
+                 });
+                 this.result = data.Result;
+                 this.showResult = true;
+                 if (data.Success) this.done = true;
+                 else setTimeout(() => { this.showResult = false; }, 3000);
+             } catch (e) {
+                 alert('Failed to subscribe.');
+             } finally {
+                 this.busy = false;
+             }
+         }
+     }">
     <h2 class="title text-sm font-semibold uppercase tracking-wide text-white">
         @T("Newsletter.Title")
     </h2>
-    <div class="newsletter-subscribe" id="newsletter-subscribe-block">
+    <div class="newsletter-subscribe" id="newsletter-subscribe-block" x-show="!done">
         <div class="newsletter-email space-y-3">
             <div class="flex overflow-hidden rounded-lg border border-slate-700 bg-slate-800 focus-within:border-primary-500">
-                <input asp-for="NewsLetterEmail" id="newsletter-email" class="newsletter-subscribe-text min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" placeholder=@T("Newsletter.Email.Placeholder") aria-label="@T("Newsletter.Subscribe")" />
-                <button type="button" id="newsletter-subscribe-button" class="button-1 newsletter-subscribe-button bg-primary-600 px-4 text-sm font-semibold text-white hover:bg-primary-700">@T(Model.AllowToUnsubscribe ? "Newsletter.Options.Send" : "Newsletter.Options.Subscribe")</button>
+                <input asp-for="NewsLetterEmail" id="newsletter-email" x-ref="email" x-on:keydown.enter.prevent="subscribe()" class="newsletter-subscribe-text min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" placeholder=@T("Newsletter.Email.Placeholder") aria-label="@T("Newsletter.Subscribe")" />
+                <button type="button" id="newsletter-subscribe-button" @@click="subscribe()" :disabled="busy" class="button-1 newsletter-subscribe-button bg-primary-600 px-4 text-sm font-semibold text-white hover:bg-primary-700">@T(Model.AllowToUnsubscribe ? "Newsletter.Options.Send" : "Newsletter.Options.Subscribe")</button>
             </div>
 
             @if (Model.AllowToUnsubscribe)
@@ -30,88 +63,9 @@
             }
         </div>
         <div class="newsletter-validation mt-2 text-xs [&_.field-validation-error]:text-red-400">
-            <span id="subscribe-loading-progress" style="display: none;" class="please-wait text-slate-400">@T("Common.Wait")</span>
+            <span id="subscribe-loading-progress" x-show="busy" x-cloak class="please-wait text-slate-400">@T("Common.Wait")</span>
             <span asp-validation-for="NewsLetterEmail"></span>
         </div>
     </div>
-    <div class="newsletter-result text-sm text-slate-200" id="newsletter-result-block"></div>
-    <script asp-location="Footer">        
-        async function getCaptchaToken(action, reCaptchaPublicKey, isReCaptchaV3) {
-            var recaptchaToken = '';
-            if (isReCaptchaV3) {
-                grecaptcha.ready(() => {
-                    grecaptcha.execute(reCaptchaPublicKey, { action: action }).then((token) => {
-                        recaptchaToken = token;
-                    });
-                });
-
-                while (recaptchaToken == '') {
-                    await new Promise(t => setTimeout(t, 100));
-                }
-            } else {
-                recaptchaToken = $('#newsletter-subscribe-block .captcha-box textarea[name="g-recaptcha-response"').val();
-            }
-            
-            return recaptchaToken;
-        }       
-
-        async function newsletter_subscribe(subscribe) {
-            var subscribeProgress = $("#subscribe-loading-progress");
-            subscribeProgress.show();
-            var captchaTok = '';
-            if (@Model.DisplayCaptcha.ToString().ToLowerInvariant() == true) {
-                captchaTok = await getCaptchaToken('SubscribeNewsletter', '@Model.ReCaptchaPublicKey', @Model.IsReCaptchaV3.ToString().ToLowerInvariant());
-            }
-            var postData = {
-                subscribe: subscribe,
-                email: $("#newsletter-email").val(),                
-                'g-recaptcha-response': captchaTok
-            };
-            addAntiForgeryToken(postData);
-            $.ajax({
-                cache: false,
-                type: "POST",
-                url: "@(Url.RouteUrl(NopRouteNames.Ajax.SUBSCRIBE_NEWSLETTER))",
-                data: postData,
-                success: function (data, textStatus, jqXHR) {
-                    $("#newsletter-result-block").html(data.Result);
-                    if (data.Success) {
-                        $('#newsletter-subscribe-block').hide();
-                        $('#newsletter-result-block').show();
-                    } else {
-                        $('#newsletter-result-block').fadeIn("slow").delay(2000).fadeOut("slow");
-                    }
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    alert('Failed to subscribe.');
-                },
-                complete: function (jqXHR, textStatus) {
-                    subscribeProgress.hide();
-                }
-            });
-        }
-
-        $(function() {
-            $('#newsletter-subscribe-button').on('click', function () {
-                @if (Model.AllowToUnsubscribe)
-                {
-                    <text>if ($('#newsletter_subscribe').is(':checked')) {
-                    newsletter_subscribe('true');
-                } else {
-                    newsletter_subscribe('false');
-                }</text>
-                }
-                else
-                {
-                    <text>newsletter_subscribe('true');</text>
-                }
-            });
-            $("#newsletter-email").on("keydown", function (event) {
-                if (event.keyCode == 13) {
-                    $("#newsletter-subscribe-button").trigger("click");
-                    return false;
-                }
-            });
-        });
-    </script>
+    <div class="newsletter-result text-sm text-slate-200" id="newsletter-result-block" x-show="showResult" x-transition.opacity x-html="result"></div>
 </div>
